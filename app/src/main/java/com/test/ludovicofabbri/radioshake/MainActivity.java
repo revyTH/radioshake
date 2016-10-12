@@ -1,5 +1,7 @@
 package com.test.ludovicofabbri.radioshake;
 
+import android.app.DownloadManager;
+import android.content.Context;
 import android.net.Uri;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -8,55 +10,96 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.HttpClientStack;
+import com.android.volley.toolbox.HttpStack;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.test.ludovicofabbri.radioshake.R;
-
+import org.apache.http.params.HttpParams;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.URLEncoder;
+import java.util.logging.Logger;
 import fragment.BlankFragment;
 import fragment.YoutubeFragment;
+import utils.Config;
+
+
 
 
 public class MainActivity extends AppCompatActivity implements BlankFragment.OnFragmentInteractionListener{
 
-    private Toolbar myToolbar;
-    private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle drawerToggle;
+    private static final String LOG_TAG = MainActivity.class.toString();
 
-    ListView sidebar_list;
-    ArrayAdapter<String> listAdapter;
-    String fragmentArray[] = {"Frag1", "Frag2"};
+    public static final String TAG = "VolleyPatterns";
+    private Context mContext;
+
+    private RequestQueue mRequestQueue;
+
+    private Toolbar mToolbar;
+    private DrawerLayout mDrawerLayout;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private ListView mSidebarList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mContext = this;
 
+        CookieHandler.setDefault(new CookieManager());
+
+
+        ArrayAdapter<String> mListAdapter;
+        String fragmentArray[] = {"Frag1", "Frag2"};
+
+
+        try {
+            login();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
 
         // action bar init
-        myToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(myToolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        drawerToggle = new ActionBarDrawerToggle(
-                this, drawerLayout, myToolbar, R.string.drawer_open, R.string.drawer_closed);
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this, mDrawerLayout, mToolbar, R.string.drawer_open, R.string.drawer_closed);
 
-        drawerLayout.setDrawerListener(drawerToggle);
-        drawerToggle.syncState();
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        mDrawerToggle.syncState();
 
 
 
         // navigation menu init
-        sidebar_list = (ListView) findViewById(R.id.sidebar_list);
-        listAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
-        sidebar_list.setAdapter(listAdapter);
+        mSidebarList = (ListView) findViewById(R.id.sidebar_list);
+        mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
+        mSidebarList.setAdapter(mListAdapter);
 
-        sidebar_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mSidebarList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -115,6 +158,85 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
     public void onFragmentInteraction(Uri uri) {
 
     }
+
+
+
+
+
+
+
+
+
+
+
+    private void login() throws JSONException {
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        String url = "http://192.168.1.72:4500/auth/login";
+        String body = "{\"username\": \"ali\", \"password\": \"polipOOOOo\"}";
+        JSONObject jsonBody = new JSONObject(body);
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    dislikes();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+                try {
+                    dislikes();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+
+        queue.add(request);
+    }
+
+
+    private void dislikes() throws JSONException {
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        String url = "http://192.168.1.72:4500/api/update_dislikes";
+        String body = "{\"value\":\"aaa1\"}";
+        JSONObject jsonBody = new JSONObject(body);
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+            }
+        });
+
+
+        queue.add(request);
+    }
+
+
+
+
+
+
 
 
 }

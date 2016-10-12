@@ -2,6 +2,13 @@ package fragment;
 
 import android.os.Bundle;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayerSupportFragment;
@@ -9,6 +16,7 @@ import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,11 +30,21 @@ import com.google.android.youtube.player.YouTubePlayer.Provider;
 import com.google.android.youtube.player.YouTubePlayerFragment;
 import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 import com.google.android.youtube.player.YouTubePlayerView;
+import com.test.ludovicofabbri.radioshake.MainActivity;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import utils.Config;
 
 
 public class YoutubeFragment extends YouTubePlayerSupportFragment {
+
+    private static final String LOG_TAG = YoutubeFragment.class.toString();
 
     private String currentVideoID = "video_id";
     private YouTubePlayer activePlayer;
@@ -54,10 +72,23 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
             @Override
             public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer player, boolean wasRestored) {
+
+
                 activePlayer = player;
                 activePlayer.setPlayerStyle(YouTubePlayer.PlayerStyle.DEFAULT);
+
                 if (!wasRestored) {
-                    activePlayer.loadVideo(getArguments().getString("url"), 0);
+
+//                    activePlayer.loadVideo(getArguments().getString("url"), 0);
+
+//                    activePlayer.cueVideo(getArguments().getString("url"), 20000);
+
+                    try {
+                        testVolley();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+
 
                 }
             }
@@ -70,4 +101,81 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 //    public void onYouTubeVideoPaused() {
 //        activePlayer.pause();
 //    }
+
+
+
+
+
+
+
+
+    public void testVolley() throws UnsupportedEncodingException {
+
+        RequestQueue queue = Volley.newRequestQueue((MainActivity)getActivity());
+
+        String query = URLEncoder.encode("Blue Stahli Ultranumb", "UTF-8");
+        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video&videoEmbeddable=true";
+
+
+
+        JsonObjectRequest jsonObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+
+//                        Log.w(LOG_TAG, response.names().toString(4));
+
+                            JSONArray items = (JSONArray)response.get("items");
+                            JSONObject firstResult = items.getJSONObject(0);
+                            Log.w(LOG_TAG, firstResult.toString(4));
+                            String videoId = firstResult.getJSONObject("id").getString("videoId");
+                            Log.w(LOG_TAG, videoId);
+                            activePlayer.loadVideo(videoId, 0);
+
+
+//                        Log.w(LOG_TAG, response.toString(4));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(LOG_TAG, error.toString());
+                    }
+                });
+
+
+
+        url = "http://192.168.1.72:4500/api/tags";
+
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray response) {
+//                    Log.w(LOG_TAG, response.toString());
+                    }
+
+
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(LOG_TAG, "Volley error.");
+                    }
+                });
+
+
+
+
+
+        // Add the request to the RequestQueue.
+        queue.add(jsonObjRequest);
+//        queue.add(jsonArrayRequest);
+
+    }
 }
