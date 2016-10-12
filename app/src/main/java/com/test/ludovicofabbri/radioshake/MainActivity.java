@@ -36,27 +36,37 @@ import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import fragment.BlankFragment;
+import fragment.LoginFragment;
 import fragment.YoutubeFragment;
 import utils.Config;
 
 
 
 
-public class MainActivity extends AppCompatActivity implements BlankFragment.OnFragmentInteractionListener{
+public class MainActivity extends AppCompatActivity implements BlankFragment.OnFragmentInteractionListener, LoginFragment.OnFragmentInteractionListener{
 
     private static final String LOG_TAG = MainActivity.class.toString();
-
-    public static final String TAG = "VolleyPatterns";
     private Context mContext;
-
     private RequestQueue mRequestQueue;
-
     private Toolbar mToolbar;
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     private ListView mSidebarList;
+
+
+
+    public Context getContext() {
+        if (mContext == null) {
+            mContext = this;
+        }
+        return mContext;
+    }
+
+
+
 
 
     @Override
@@ -64,23 +74,53 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mContext = this;
-
+        // necessary for session-cookie management in Volley
         CookieHandler.setDefault(new CookieManager());
 
 
-        ArrayAdapter<String> mListAdapter;
-        String fragmentArray[] = {"Frag1", "Frag2"};
+        initToolbar();
 
 
-        try {
-            login();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        initSidebar();
 
 
-        // action bar init
+
+        // instantiate login fragment
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment loginFragment = new LoginFragment();
+        fragmentManager.beginTransaction().replace(R.id.activity_main, loginFragment).commit();
+
+    }
+
+
+
+
+
+
+    /**
+     * This interface must be implemented by activities that contain this
+     * fragment to allow an interaction in this fragment to be communicated
+     * to the activity and potentially other fragments contained in that
+     * activity.
+     * <p>
+     * See the Android Training lesson <a href=
+     * "http://developer.android.com/training/basics/fragments/communicating.html"
+     * >Communicating with Other Fragments</a> for more information.
+     */
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
+    }
+
+
+
+
+
+    /**
+     * initialize Toolbar
+     */
+    private void initToolbar() {
+
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
@@ -92,9 +132,17 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
 
+    }
 
 
-        // navigation menu init
+    /**
+     * initialize Sidebar
+     */
+    private void initSidebar() {
+
+        ArrayAdapter<String> mListAdapter;
+        String fragmentArray[] = {"Frag1", "Frag2"};
+
         mSidebarList = (ListView) findViewById(R.id.sidebar_list);
         mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
         mSidebarList.setAdapter(mListAdapter);
@@ -132,37 +180,10 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
                     fragmentManager.beginTransaction().replace(R.id.activity_main, myFragment).commit();
                 }
 
-
-
-
             }
         });
-    }
-
-
-
-
-
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    @Override
-    public void onFragmentInteraction(Uri uri) {
 
     }
-
-
-
-
-
 
 
 
@@ -174,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
         RequestQueue queue = Volley.newRequestQueue(this);
 
         String url = "http://192.168.1.72:4500/auth/login";
-        String body = "{\"username\": \"ali\", \"password\": \"polipOOOOo\"}";
+        String body = "{\"username\": \"ali\", \"password\": \"polipo\"}";
         JSONObject jsonBody = new JSONObject(body);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
@@ -182,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
             public void onResponse(JSONObject response) {
                 try {
                     Log.d(LOG_TAG, response.toString(4));
-                    dislikes();
+                    tags();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -192,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
             public void onErrorResponse(VolleyError error) {
                 Log.e(LOG_TAG, error.toString());
                 try {
-                    dislikes();
+                    tags();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -204,13 +225,21 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
     }
 
 
-    private void dislikes() throws JSONException {
+
+
+    private void tags() throws JSONException {
 
         RequestQueue queue = Volley.newRequestQueue(this);
 
-        String url = "http://192.168.1.72:4500/api/update_dislikes";
-        String body = "{\"value\":\"aaa1\"}";
-        JSONObject jsonBody = new JSONObject(body);
+        String url = "http://192.168.1.72:4500/api/update_tags";
+//        String body = "{\"value\":\"aaa1\"}";
+
+        JSONObject jsonBody = new JSONObject();
+
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("chillout");
+        list.add("electronica");
+        jsonBody.put("value", new JSONArray(list));
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
             @Override
