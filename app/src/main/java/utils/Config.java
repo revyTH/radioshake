@@ -6,6 +6,8 @@ package utils;
 
 public final class Config {
 
+    public static final int TOAST_DURATION = 4000;
+
     public static final String YOUTUBE_ANDROID_KEY = "AIzaSyB5YJjwIE9BaoWkoYyk401X2umRS_kTexM";
 
     public static final String YOUTUBE_API_KEY = "AIzaSyBer1B3B2wqGvg1MZGTVxAcE81Tz7LlF44";

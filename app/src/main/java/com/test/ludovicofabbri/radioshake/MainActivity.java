@@ -40,13 +40,17 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import fragment.BlankFragment;
 import fragment.LoginFragment;
+import fragment.RegisterFragment;
 import fragment.YoutubeFragment;
 import utils.Config;
 
 
 
 
-public class MainActivity extends AppCompatActivity implements BlankFragment.OnFragmentInteractionListener, LoginFragment.OnFragmentInteractionListener{
+public class MainActivity extends AppCompatActivity implements
+        BlankFragment.OnFragmentInteractionListener,
+        LoginFragment.OnFragmentInteractionListener,
+        RegisterFragment.OnFragmentInteractionListener {
 
     private static final String LOG_TAG = MainActivity.class.toString();
     private Context mContext;

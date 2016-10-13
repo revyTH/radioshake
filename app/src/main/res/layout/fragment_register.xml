@@ -9,26 +9,6 @@
     android:background="@color/transparent">
 
 
-
-    <!--<RelativeLayout-->
-        <!--android:id="@+id/icon_container"-->
-        <!--android:layout_alignParentTop="true"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content">-->
-
-
-        <!--<ImageView-->
-            <!--android:id="@+id/main_icon"-->
-            <!--android:layout_width="128dp"-->
-            <!--android:layout_height="128dp"-->
-            <!--android:src="@drawable/radio_icon_1"-->
-            <!--android:layout_centerInParent="true"-->
-            <!--/>-->
-
-    <!--</RelativeLayout>-->
-
-
-
     <!--title-->
     <TextView
         android:id="@+id/title"
@@ -38,7 +18,9 @@
         android:layout_height="wrap_content"
         android:textSize="32dp"
         android:textColor="#fff"
-        android:text="Login"/>
+        android:text="Create new account"/>
+
+
 
 
 
@@ -147,6 +129,52 @@
         </RelativeLayout>
 
 
+        <!--repeat password container-->
+        <RelativeLayout
+            android:id="@+id/repeat_password_container"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!--password icon-->
+            <ImageView
+                android:id="@+id/repeat_password_icon"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/password_icon"/>
+
+            <!--password edit-->
+            <EditText
+                android:id="@+id/repeat_password"
+                android:layout_marginLeft="32dp"
+                android:layout_marginRight="32dp"
+                android:padding="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#fff"
+                android:textColorHint="#999"
+                android:hint="repeat password"
+                android:inputType="textPassword"
+                android:ellipsize="start"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:background="@color/transparent"
+                />
+
+            <!--underline-->
+            <View
+                android:layout_below="@+id/repeat_password"
+                android:layout_width="wrap_content"
+                android:layout_height="0.25dp"
+                android:background="#fff"/>
+
+        </RelativeLayout>
+
+
 
     </LinearLayout>
 
@@ -154,7 +182,7 @@
 
     <!--login button    -->
     <Button
-        android:id="@+id/login_button"
+        android:id="@+id/register_button"
         android:layout_below="@+id/form_container"
         android:layout_marginTop="64dp"
         android:layout_width="match_parent"
@@ -163,7 +191,7 @@
         android:textColor="#ffffff"
         android:textSize="18sp"
         android:background="@drawable/button_bg_clean"
-        android:text="Sign in" />
+        android:text="Register" />
 
 
 
@@ -175,41 +203,6 @@
 
 
 
-    <!--register button-->
-    <LinearLayout
-        android:id="@+id/register_button"
-        android:clickable="true"
-        android:layout_centerInParent="true"
-        android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/button_pressed">
-
-        <TextView
-            android:id="@+id/accountQuestion"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="#ccc"
-            android:text="Don't have an account?"
-            />
-
-
-        <TextView
-            android:id="@+id/accountRegister"
-            android:layout_marginLeft="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="#ccc"
-            android:textStyle="bold"
-            android:text="Register"
-            />
-
-
-    </LinearLayout>
 
 
 
