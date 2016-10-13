@@ -1,14 +1,40 @@
 package fragment;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.Layout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.test.ludovicofabbri.radioshake.MainActivity;
 import com.test.ludovicofabbri.radioshake.R;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+
+import utils.Config;
+import utils.Utils;
+import utils.MyJsonObjectRequest;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -23,6 +49,13 @@ public class LoginFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+
+    private static final String LOG_TAG = LoginFragment.class.toString();
+    private RequestQueue mRequestQueue;
+
+
+
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -59,6 +92,10 @@ public class LoginFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        this.mRequestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+
     }
 
     @Override
@@ -105,5 +142,103 @@ public class LoginFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        // attach event listeners on buttons
+        initButtons();
+    }
+
+
+
+    /**
+     * init buttons listeners
+     */
+    private void initButtons() {
+
+        Button loginButton = (Button)getActivity().findViewById(R.id.login_button);
+        LinearLayout registerButton = (LinearLayout)getActivity().findViewById(R.id.register_button);
+
+        loginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(LOG_TAG, "Login called");
+
+                try {
+                    login();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        registerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(LOG_TAG, "Register called");
+            }
+        });
+
+    }
+
+
+
+
+    /**
+     * User login
+     * @throws JSONException
+     */
+    private void login() throws JSONException {
+
+        EditText usernameEditText = (EditText)getActivity().findViewById(R.id.username);
+        String username = usernameEditText.getText().toString();
+
+        EditText passwordEditText = (EditText)getActivity().findViewById(R.id.password);
+        String password = passwordEditText.getText().toString();
+
+        String body = String.format("{\"username\": \"%s\", \"password\": \"%s\"}", username, password);
+        JSONObject jsonBody = new JSONObject(body);
+
+
+
+        MyJsonObjectRequest request = new MyJsonObjectRequest(Request.Method.POST, Config.PY_SERVER_LOGIN_URL, jsonBody, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    String message = response.getString("value");
+                    Utils.createOkToast(getActivity(), message, 3000).show();
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                try {
+                    String statusCode = String.valueOf(error.networkResponse.statusCode);
+                    JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
+                    String message = jsonResponse.getString("value");
+                    Utils.createErrorToast(getActivity(), message, 3000).show();
+                    Log.e(LOG_TAG, message);
+                }
+                catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getActivity(), "Whoops! An error occurred.", Toast.LENGTH_LONG).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getActivity(), "Whoops! An error occurred.", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        // add request to queue
+        this.mRequestQueue.add(request);
     }
 }

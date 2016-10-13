@@ -58,11 +58,30 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
 
 
 
+
+    /**
+     *
+     * @return the activity context
+     */
     public Context getContext() {
-        if (mContext == null) {
-            mContext = this;
+        if (this.mContext == null) {
+            this.mContext = this;
         }
-        return mContext;
+        return this.mContext;
+    }
+
+
+
+
+    /**
+     *
+     * @return RequestQueue object
+     */
+    public RequestQueue getRequestQueue() {
+        if (this.mRequestQueue == null) {
+            this.mRequestQueue = Volley.newRequestQueue(this);
+        }
+        return this.mRequestQueue;
     }
 
 
@@ -76,6 +95,9 @@ public class MainActivity extends AppCompatActivity implements BlankFragment.OnF
 
         // necessary for session-cookie management in Volley
         CookieHandler.setDefault(new CookieManager());
+
+        // init RequestQeueue object
+        this.mRequestQueue = Volley.newRequestQueue(this);
 
 
         initToolbar();

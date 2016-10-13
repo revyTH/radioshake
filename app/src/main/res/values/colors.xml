@@ -9,4 +9,7 @@
     <color name="darkBlue">#0f305e</color>
     <color name="chianBlue">#0f4c85</color>
     <color name="lightBlue">#2f81bc</color>
+    <color name="redError">#a82205</color>
+    <color name="redErrorFade">#80a82205</color>
+    <color name="cyanOk">#0b5bb7</color>
 </resources>
