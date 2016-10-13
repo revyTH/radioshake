@@ -40,50 +40,50 @@
 
 
 
-        <!--username container-->
-        <RelativeLayout
-            android:id="@+id/username_container"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <!--username icon-->
-            <ImageView
-                android:id="@+id/username_icon"
-                android:layout_alignParentLeft="true"
-                android:layout_centerVertical="true"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/username_icon"/>
-
-            <!--username edit-->
-            <EditText
-                android:id="@+id/username"
-                android:layout_marginLeft="32dp"
-                android:layout_marginRight="32dp"
-                android:padding="12dp"
+            <!--username container-->
+            <RelativeLayout
+                android:id="@+id/username_container"
+                android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:textColor="#fff"
-                android:textColorHint="#999"
-                android:hint="username"
-                android:scrollHorizontally="true"
-                android:ellipsize="start"
-                android:gravity="center_horizontal"
-                android:inputType="textCapWords|textPersonName"
-                android:maxLines="1"
-                android:background="@color/transparent"
+                android:layout_height="wrap_content">
+
+                <!--username icon-->
+                <ImageView
+                    android:id="@+id/username_icon"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/username_icon"/>
+
+                <!--username edit-->
+                <EditText
+                    android:id="@+id/username"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="40dp"
+                    android:padding="12dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="24sp"
+                    android:textColor="#fff"
+                    android:textColorHint="#999"
+                    android:hint="username"
+                    android:scrollHorizontally="true"
+                    android:ellipsize="start"
+                    android:gravity="center_horizontal"
+                    android:inputType="textCapWords|textPersonName"
+                    android:maxLines="1"
+                    android:background="@color/transparent"
                 />
 
-            <!--underline-->
-            <View
-                android:layout_below="@+id/username"
-                android:layout_width="wrap_content"
-                android:layout_height="0.25dp"
-                android:background="#fff"/>
+                <!--underline-->
+                <View
+                    android:layout_below="@+id/username"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0.25dp"
+                    android:background="#fff"/>
 
-        </RelativeLayout>
+            </RelativeLayout>
 
 
 
@@ -91,7 +91,7 @@
         <RelativeLayout
             android:id="@+id/password_container"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="32dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -100,19 +100,19 @@
                 android:id="@+id/password_icon"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@drawable/password_icon"/>
 
             <!--password edit-->
             <EditText
                 android:id="@+id/password"
-                android:layout_marginLeft="32dp"
-                android:layout_marginRight="32dp"
+                android:layout_marginLeft="40dp"
+                android:layout_marginRight="40dp"
                 android:padding="12dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
+                android:textSize="24sp"
                 android:textColor="#fff"
                 android:textColorHint="#999"
                 android:hint="password"
@@ -133,25 +133,28 @@
         </RelativeLayout>
 
 
-
     </LinearLayout>
 
 
 
-    <!--login button    -->
+
+
+
+
+
+
+    <!--login button -->
     <Button
         android:id="@+id/login_button"
         android:layout_below="@+id/form_container"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="128dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp"
         android:textColor="#ffffff"
-        android:textSize="18sp"
+        android:textSize="24sp"
         android:background="@drawable/button_bg_clean"
         android:text="Login" />
-
-
 
 
 
