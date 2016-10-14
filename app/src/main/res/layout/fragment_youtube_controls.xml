@@ -1,0 +1,73 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_alignParentBottom="true"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="150dp"
+    android:background="@drawable/gradient_background_1"
+    tools:context="fragment.YoutubeControlsFragment">
+
+
+    <ImageButton
+        android:id="@+id/play_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:scaleType="center"
+        android:contentDescription="Play music"
+        android:src="@drawable/play_icon"
+        android:background="@drawable/youtube_control_bg" />
+
+
+    <ImageButton
+        android:id="@+id/pause_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:scaleType="center"
+        android:contentDescription="Pause music"
+        android:src="@drawable/pause_icon"
+    android:background="@drawable/youtube_control_bg" />
+
+
+    <ImageButton
+        android:id="@+id/forward_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:scaleType="center"
+        android:contentDescription="Next track"
+        android:src="@drawable/forward_icon"
+    android:background="@drawable/youtube_control_bg" />
+
+
+    <ImageButton
+        android:id="@+id/dislike_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:scaleType="center"
+        android:contentDescription="Dislike"
+        android:src="@drawable/dislike_icon"
+    android:background="@drawable/youtube_control_bg" />
+
+
+    <ImageButton
+        android:id="@+id/info_control"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:scaleType="center"
+        android:contentDescription="Track info"
+        android:src="@drawable/info_icon"
+    android:background="@drawable/youtube_control_bg" />
+
+
+
+
+
+
+
+
+
+</LinearLayout>

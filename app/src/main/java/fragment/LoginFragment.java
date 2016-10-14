@@ -182,7 +182,7 @@ public class LoginFragment extends Fragment {
             public void onClick(View view) {
                 Log.d(LOG_TAG, "Register called");
                 // instantiate register fragment
-                FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+                FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
                 Fragment registerFragment = new RegisterFragment();
                 fragmentManager.beginTransaction().replace(R.id.activity_main, registerFragment).addToBackStack("RegisterState").commit();
             }

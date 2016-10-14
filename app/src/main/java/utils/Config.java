@@ -14,7 +14,14 @@ public final class Config {
 
     public static final String YOUTUBE_QUERY_URL = "https://www.googleapis.com/youtube/v3/search";
 
+
+
     public static final String PY_SERVER_BASE_URL = "http://192.168.1.72:4500";
+//    public static final String PY_SERVER_BASE_URL = "http://2.236.20.78:4500";
+//    public static final String PY_SERVER_BASE_URL = "http://172.20.10.3:4500";
+
+
+
 
     public static final String PY_SERVER_REGISTER_URL = PY_SERVER_BASE_URL + "/auth/register";
 

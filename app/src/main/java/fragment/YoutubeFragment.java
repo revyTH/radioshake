@@ -15,11 +15,15 @@ import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.youtube.player.YouTubeBaseActivity;
@@ -31,6 +35,7 @@ import com.google.android.youtube.player.YouTubePlayerFragment;
 import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 import com.google.android.youtube.player.YouTubePlayerView;
 import com.test.ludovicofabbri.radioshake.MainActivity;
+import com.test.ludovicofabbri.radioshake.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,6 +45,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import utils.Config;
+import utils.Utils;
 
 
 public class YoutubeFragment extends YouTubePlayerSupportFragment {
@@ -47,7 +53,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
     private static final String LOG_TAG = YoutubeFragment.class.toString();
 
     private String currentVideoID = "video_id";
-    private YouTubePlayer activePlayer;
+    private static YouTubePlayer activePlayer;
 
     public static YoutubeFragment newInstance(String url) {
 
@@ -63,6 +69,14 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
         return playerYouTubeFrag;
     }
 
+    /**
+     *
+     * @return YoutubeFragment instance
+     */
+    public static YouTubePlayer getActivePlayer() {
+        return activePlayer;
+    }
+
     private void init() {
 
         initialize(Config.YOUTUBE_ANDROID_KEY, new YouTubePlayer.OnInitializedListener() {
@@ -76,6 +90,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
                 activePlayer = player;
                 activePlayer.setPlayerStyle(YouTubePlayer.PlayerStyle.DEFAULT);
+                activePlayer.setFullscreenControlFlags(YouTubePlayer.FULLSCREEN_FLAG_CUSTOM_LAYOUT);
 
                 if (!wasRestored) {
 
@@ -91,16 +106,51 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
 
                 }
+
+
+                activePlayer.setOnFullscreenListener(new YouTubePlayer.OnFullscreenListener(){
+                    @Override
+                    public void onFullscreen(boolean arg0) {
+                        // do full screen stuff here, or don't. I started a YouTubeStandalonePlayer
+                        // to go to full screen
+                        Log.d(LOG_TAG, "Youtube player full screen mode: disabled");
+                    }});
             }
         });
+
+
+
+
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
+
+        return super.onCreateView(layoutInflater, viewGroup, bundle);
+
     }
 
 
 
-//    @Override
-//    public void onYouTubeVideoPaused() {
-//        activePlayer.pause();
-//    }
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        ViewGroup.LayoutParams layoutParams = (ViewGroup.LayoutParams)getView().getLayoutParams();
+        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;;
+
+        RelativeLayout container = (RelativeLayout) getActivity().findViewById(R.id.activity_main);
+        int height = container.getMeasuredHeight();
+        Log.d(LOG_TAG, "LAYOUT HEIGHT = " + height);
+
+        layoutParams.height = height - 150;
+        getView().setLayoutParams(layoutParams);
+
+    }
+
+
+
+
 
 
 

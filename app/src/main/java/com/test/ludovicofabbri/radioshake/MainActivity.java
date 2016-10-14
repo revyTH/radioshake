@@ -12,8 +12,10 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -37,10 +39,13 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import fragment.BlankFragment;
+import fragment.DeleteFragment;
 import fragment.LoginFragment;
 import fragment.RegisterFragment;
+import fragment.YoutubeControlsFragment;
 import fragment.YoutubeFragment;
 import utils.Config;
 
@@ -50,7 +55,8 @@ import utils.Config;
 public class MainActivity extends AppCompatActivity implements
         BlankFragment.OnFragmentInteractionListener,
         LoginFragment.OnFragmentInteractionListener,
-        RegisterFragment.OnFragmentInteractionListener {
+        RegisterFragment.OnFragmentInteractionListener,
+        YoutubeControlsFragment.OnFragmentInteractionListener {
 
     private static final String LOG_TAG = MainActivity.class.toString();
     private Context mContext;
@@ -59,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
     private ListView mSidebarList;
+    private FragmentManager mFragmentManager;
 
 
 
@@ -89,6 +96,18 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    /**
+     * main FragmentManager
+     * @return
+     */
+    public FragmentManager getMainFragmentManager() {
+        if (mFragmentManager == null) {
+            mFragmentManager = getSupportFragmentManager();
+        }
+        return this.mFragmentManager;
+    }
+
+
 
 
 
@@ -99,6 +118,9 @@ public class MainActivity extends AppCompatActivity implements
 
         // necessary for session-cookie management in Volley
         CookieHandler.setDefault(new CookieManager());
+
+        // init the FragmentManager
+        this.mFragmentManager = getSupportFragmentManager();
 
         // init RequestQeueue object
         this.mRequestQueue = Volley.newRequestQueue(this);
@@ -195,16 +217,25 @@ public class MainActivity extends AppCompatActivity implements
                         break;
                 }
 
-                FragmentManager fragmentManager = getSupportFragmentManager();
+
 
                 if (fragment != null) {
-                    fragmentManager.beginTransaction().replace(R.id.activity_main, fragment).commit();
+                    mFragmentManager.beginTransaction().replace(R.id.activity_main, fragment).commit();
                 }
                 else {
                     String video_id = "LHcP4MWABGY";
-                    YoutubeFragment myFragment = YoutubeFragment.newInstance(video_id);
-                    fragmentManager.beginTransaction().replace(R.id.activity_main, myFragment).commit();
+                    YoutubeFragment youtubeFragment = YoutubeFragment.newInstance(video_id);
+                    Log.w(LOG_TAG, youtubeFragment.getClass().toString());
+
+                    mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).addToBackStack(null).commit();
+//                    mFragmentManager.popBackStack();
+                    mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
+
+
                 }
+
+                // close navigation menu
+                mDrawerLayout.closeDrawers();
 
             }
         });
