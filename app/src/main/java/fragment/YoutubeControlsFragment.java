@@ -101,12 +101,7 @@ public class YoutubeControlsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_youtube_controls, container, false);
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
+
 
     @Override
     public void onAttach(Context context) {
@@ -122,13 +117,17 @@ public class YoutubeControlsFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
+
 
         // handle backward navigation
         if (isRemoving()) {
-            ((MainActivity)getActivity()).navigationManager(0, true);
+            mListener.onFragmentBackToMain("Backward navigation YOUTUBE");
         }
+
+        mListener = null;
     }
+
+
 
     /**
      * This interface must be implemented by activities that contain this
@@ -142,7 +141,7 @@ public class YoutubeControlsFragment extends Fragment {
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        void onFragmentBackToMain(String message);
     }
 
 

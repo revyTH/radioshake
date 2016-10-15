@@ -117,12 +117,13 @@ public class RegisterFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
 
         // handle backward navigation
         if (isRemoving()) {
-            ((MainActivity)getActivity()).navigationManager(0, true);
+            mListener.onFragmentBackToMain("Backward navigation REGISTER");
         }
+
+        mListener = null;
     }
 
     /**
@@ -138,6 +139,7 @@ public class RegisterFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+        void onFragmentBackToMain(String message);
     }
 
 

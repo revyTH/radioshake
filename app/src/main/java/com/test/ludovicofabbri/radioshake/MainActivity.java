@@ -1,10 +1,10 @@
 package com.test.ludovicofabbri.radioshake;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.net.Uri;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -12,39 +12,18 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpClientStack;
-import com.android.volley.toolbox.HttpStack;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.android.youtube.player.YouTubePlayerFragment;
-import com.test.ludovicofabbri.radioshake.R;
-import org.apache.http.params.HttpParams;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.io.UnsupportedEncodingException;
+
 import java.net.CookieHandler;
 import java.net.CookieManager;
-import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import java.util.logging.Logger;
-import fragment.BlankFragment;
-import fragment.DeleteFragment;
+
 import fragment.LoginFragment;
 import fragment.RegisterFragment;
 import fragment.YoutubeControlsFragment;
@@ -55,7 +34,6 @@ import utils.Config;
 
 
 public class MainActivity extends AppCompatActivity implements
-        BlankFragment.OnFragmentInteractionListener,
         LoginFragment.OnFragmentInteractionListener,
         RegisterFragment.OnFragmentInteractionListener,
         YoutubeControlsFragment.OnFragmentInteractionListener {
@@ -138,10 +116,6 @@ public class MainActivity extends AppCompatActivity implements
         initSidebar();
 
 
-
-        // instantiate login fragment
-        navigationManager(Config.NAV_LOGIN_STATE, false);
-
     }
 
 
@@ -162,6 +136,33 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onFragmentInteraction(Uri uri) {
 
+    }
+
+
+
+    @Override
+    public void onFragmentBackToMain(String message) {
+
+        Log.d(LOG_TAG, message);
+
+        List<Fragment> fragmentList = mFragmentManager.getFragments();
+
+        if (fragmentList == null) {
+            return;
+        }
+
+        for (Fragment fragment : fragmentList) {
+            if (fragment != null) {
+                mFragmentManager.beginTransaction().remove(fragment).commit();
+            }
+        }
+
+        // empty the backstack
+        for (int i = 0; i < mFragmentManager.getBackStackEntryCount(); i++) {
+            mFragmentManager.popBackStack();
+        }
+
+        findViewById(R.id.start_music_main).setVisibility(View.VISIBLE);
     }
 
 
@@ -193,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements
     private void initSidebar() {
 
         ArrayAdapter<String> mListAdapter;
-        String fragmentArray[] = {"Frag1", "Frag2"};
+        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags"};
 
         mSidebarList = (ListView) findViewById(R.id.sidebar_list);
         mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
@@ -204,38 +205,45 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-                Fragment fragment;
+                int nextState = Config.NAV_MAIN_STATE;
 
                 switch (i) {
 
+                    // main
                     case 0:
-                        fragment = new BlankFragment();
+                        onFragmentBackToMain("Back to main?");
+                        mDrawerLayout.closeDrawers();
+                        return;
+
+                    // login
+                    case 1:
+                        nextState = Config.NAV_LOGIN_STATE;
                         break;
 
-                    case 1:
-                        fragment = null;
+                    // register
+                    case 2:
+                        nextState = Config.NAV_REGISTER_STATE;
+                        break;
+
+                    // login
+                    case 3:
+                        nextState = Config.NAV_YOUTUBE_STATE;
+                        break;
+
+                    // login
+                    case 4:
+                        nextState = Config.NAV_TAGS_STATE;
                         break;
 
                     default:
-                        fragment = null;
-                        break;
+                        onFragmentBackToMain("Back to main?");
+                        mDrawerLayout.closeDrawers();
+                        return;
+
                 }
 
-
-
-                if (fragment != null) {
-                    mFragmentManager.beginTransaction().replace(R.id.activity_main, fragment).commit();
-                }
-                else {
-//                    String video_id = "LHcP4MWABGY";
-//                    YoutubeFragment youtubeFragment = YoutubeFragment.newInstance(video_id);
-
-
-//                    mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).addToBackStack(null).commit();
-//                    mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
-
-                    navigationManager(Config.NAV_YOUTUBE_STATE, false);
-                }
+                // navigate state
+                navigationManager(nextState);
 
                 // close navigation menu
                 mDrawerLayout.closeDrawers();
@@ -247,68 +255,42 @@ public class MainActivity extends AppCompatActivity implements
 
 
     /**
-     * Handle fragments navigation in the main activity
+     * Navigation Manager
      * @param nextState
      */
-    public void navigationManager(int nextState, boolean isBackwardNavigation) {
+    public void navigationManager(int nextState) {
 
-        if (mNavigationStack == null) {
-            mNavigationStack = new Stack<Integer>();
-        }
+        FragmentTransaction transaction = null;
 
-        if (mFragmentManager == null) {
-            mFragmentManager = getSupportFragmentManager();
-        }
-
-        // if is backward navigation we extract the previous state from the stack
-        if (isBackwardNavigation) {
-
-            if (mNavigationStack.empty()) {
-                nextState = Config.NAV_DEFAULT_STATE;
-            }
-
-            else {
-                // pop current state
-                mNavigationStack.pop();
-
-                // check again if stack empty
-                if (mNavigationStack.empty()) {
-                    nextState = Config.NAV_DEFAULT_STATE;
-                }
-
-                // else we get the previous state in the stack
-                else {
-                    nextState = mNavigationStack.pop();
-                }
-            }
-        }
-        // otherwise we push the next state in the stack
-        else {
-            mNavigationStack.push(nextState);
+        if (nextState != Config.NAV_MAIN_STATE) {
+            findViewById(R.id.start_music_main).setVisibility(View.GONE);
         }
 
 
         switch (nextState) {
 
-            case Config.NAV_MAIN_STATE:
-                break;
-
-
             case Config.NAV_LOGIN_STATE:
-                mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).addToBackStack(null).commit();
+                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment());
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.addToBackStack(null).commit();
                 break;
 
 
             case Config.NAV_REGISTER_STATE:
-                mFragmentManager.beginTransaction().replace(R.id.activity_main, new RegisterFragment()).addToBackStack(null).commit();
+                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new RegisterFragment());
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.addToBackStack(null).commit();
                 break;
 
 
             case Config.NAV_YOUTUBE_STATE:
                 Fragment youtubeFragment = YoutubeFragment.newInstance();
-                mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).commit();
-                // add only one to the backstack
-                mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
+                FragmentTransaction transaction1 =  mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment);
+                FragmentTransaction transaction2 =  mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment());
+                transaction1.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction1.addToBackStack(null).commit();
+                transaction2.addToBackStack(null).commit();
                 break;
 
 
@@ -328,8 +310,9 @@ public class MainActivity extends AppCompatActivity implements
                 break;
 
 
+
             default:
-                mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).commit();
+//                findViewById(R.id.start_music_main).setVisibility(View.VISIBLE);
                 break;
         }
 

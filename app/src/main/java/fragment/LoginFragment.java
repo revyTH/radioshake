@@ -127,13 +127,13 @@ public class LoginFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
 
         // handle backward navigation
         if (isRemoving()) {
-            ((MainActivity)getActivity()).navigationManager(0, true);
+            mListener.onFragmentBackToMain("Backward navigation LOGIN");
         }
 
+        mListener = null;
     }
 
     /**
@@ -149,6 +149,7 @@ public class LoginFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+        void onFragmentBackToMain(String message);
     }
 
 
@@ -187,11 +188,7 @@ public class LoginFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 Log.d(LOG_TAG, "Register called");
-                // instantiate register fragment
-//                FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
-//                Fragment registerFragment = new RegisterFragment();
-//                fragmentManager.beginTransaction().replace(R.id.activity_main, registerFragment).addToBackStack("RegisterState").commit();
-                ((MainActivity)getActivity()).navigationManager(Config.NAV_REGISTER_STATE, false);
+                ((MainActivity)getActivity()).navigationManager(Config.NAV_REGISTER_STATE);
             }
         });
 
