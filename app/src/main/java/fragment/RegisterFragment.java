@@ -247,6 +247,7 @@ public class RegisterFragment extends Fragment {
                     Log.d(LOG_TAG, response.toString(4));
                     String message = response.getString("value");
                     Utils.createOkToast(getActivity(), message, 3000).show();
+                    ((MainActivity)getActivity()).navigationManager(Config.NAV_LOGIN_STATE);
 
                 } catch (JSONException e) {
                     e.printStackTrace();

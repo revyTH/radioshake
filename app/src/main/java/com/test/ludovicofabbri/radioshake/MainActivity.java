@@ -26,6 +26,7 @@ import java.util.Stack;
 
 import fragment.LoginFragment;
 import fragment.RegisterFragment;
+import fragment.TagsFragment;
 import fragment.YoutubeControlsFragment;
 import fragment.YoutubeFragment;
 import utils.Config;
@@ -36,7 +37,8 @@ import utils.Config;
 public class MainActivity extends AppCompatActivity implements
         LoginFragment.OnFragmentInteractionListener,
         RegisterFragment.OnFragmentInteractionListener,
-        YoutubeControlsFragment.OnFragmentInteractionListener {
+        YoutubeControlsFragment.OnFragmentInteractionListener,
+        TagsFragment.OnFragmentInteractionListener {
 
     private static final String LOG_TAG = MainActivity.class.toString();
     private Context mContext;
@@ -295,6 +297,9 @@ public class MainActivity extends AppCompatActivity implements
 
 
             case Config.NAV_TAGS_STATE:
+                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new TagsFragment());
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.addToBackStack(null).commit();
                 break;
 
 

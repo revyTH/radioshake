@@ -1,0 +1,74 @@
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="fragment.TagsFragment"
+    >
+
+    <!--title-->
+    <TextView
+        android:id="@+id/title"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:textColor="#fff"
+        android:gravity="center"
+        android:text="Select your music tags"/>
+
+
+    <!--scroll tags list-->
+    <ScrollView
+        android:id="@+id/tags_scroll_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+
+        <!--tags list-->
+        <LinearLayout
+            android:id="@+id/tags_list"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+
+
+
+            <!--<FrameLayout-->
+                <!--android:layout_marginTop="20dp"-->
+                <!--android:layout_width="400dp"-->
+                <!--android:layout_height="400dp"-->
+                <!--android:background="@color/colorPrimary"/>-->
+
+            <!--<FrameLayout-->
+                <!--android:layout_marginTop="20dp"-->
+                <!--android:layout_width="400dp"-->
+                <!--android:layout_height="400dp"-->
+                <!--android:background="@color/lightBlue"/>-->
+
+            <!--<FrameLayout-->
+                <!--android:layout_marginTop="20dp"-->
+                <!--android:layout_width="400dp"-->
+                <!--android:layout_height="400dp"-->
+                <!--android:background="@color/colorAccent"/>-->
+
+            <!--<FrameLayout-->
+                <!--android:layout_marginTop="20dp"-->
+                <!--android:layout_width="400dp"-->
+                <!--android:layout_height="400dp"-->
+                <!--android:background="@color/darkBlue"/>-->
+
+        </LinearLayout>
+
+
+
+
+
+    </ScrollView>
+
+
+</LinearLayout>
