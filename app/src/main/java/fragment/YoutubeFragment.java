@@ -55,27 +55,38 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
     private String currentVideoID = "video_id";
     private static YouTubePlayer activePlayer;
 
-    public static YoutubeFragment newInstance(String url) {
+
+    /**
+     * newInstance
+     *
+     * @return
+     */
+    public static YoutubeFragment newInstance() {
 
         YoutubeFragment playerYouTubeFrag = new YoutubeFragment();
 
-        Bundle bundle = new Bundle();
-        bundle.putString("url", url);
-
-        playerYouTubeFrag.setArguments(bundle);
+//        Bundle bundle = new Bundle();
+//        bundle.putString("url", url);
+//
+//        playerYouTubeFrag.setArguments(bundle);
 
         playerYouTubeFrag.init(); //This line right here
 
         return playerYouTubeFrag;
     }
 
+
+
     /**
      *
-     * @return YoutubeFragment instance
+     * @return YoutubeFragment player
      */
     public static YouTubePlayer getActivePlayer() {
         return activePlayer;
     }
+
+
+
 
     private void init() {
 
@@ -228,4 +239,10 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 //        queue.add(jsonArrayRequest);
 
     }
+
+
+
+
+
+
 }

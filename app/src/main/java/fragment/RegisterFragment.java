@@ -118,6 +118,11 @@ public class RegisterFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+
+        // handle backward navigation
+        if (isRemoving()) {
+            ((MainActivity)getActivity()).navigationManager(0, true);
+        }
     }
 
     /**

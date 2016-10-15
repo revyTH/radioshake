@@ -29,6 +29,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.youtube.player.YouTubePlayerFragment;
 import com.test.ludovicofabbri.radioshake.R;
 import org.apache.http.params.HttpParams;
 import org.json.JSONArray;
@@ -40,6 +41,7 @@ import java.net.CookieManager;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.logging.Logger;
 import fragment.BlankFragment;
 import fragment.DeleteFragment;
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements
     private ActionBarDrawerToggle mDrawerToggle;
     private ListView mSidebarList;
     private FragmentManager mFragmentManager;
+    private Stack<Integer> mNavigationStack;
 
 
 
@@ -119,6 +122,9 @@ public class MainActivity extends AppCompatActivity implements
         // necessary for session-cookie management in Volley
         CookieHandler.setDefault(new CookieManager());
 
+        // init the navigation stack
+        mNavigationStack = new Stack<Integer>();
+
         // init the FragmentManager
         this.mFragmentManager = getSupportFragmentManager();
 
@@ -134,9 +140,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         // instantiate login fragment
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        Fragment loginFragment = new LoginFragment();
-        fragmentManager.beginTransaction().replace(R.id.activity_main, loginFragment).commit();
+        navigationManager(Config.NAV_LOGIN_STATE, false);
 
     }
 
@@ -223,15 +227,14 @@ public class MainActivity extends AppCompatActivity implements
                     mFragmentManager.beginTransaction().replace(R.id.activity_main, fragment).commit();
                 }
                 else {
-                    String video_id = "LHcP4MWABGY";
-                    YoutubeFragment youtubeFragment = YoutubeFragment.newInstance(video_id);
-                    Log.w(LOG_TAG, youtubeFragment.getClass().toString());
-
-                    mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).addToBackStack(null).commit();
-//                    mFragmentManager.popBackStack();
-                    mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
+//                    String video_id = "LHcP4MWABGY";
+//                    YoutubeFragment youtubeFragment = YoutubeFragment.newInstance(video_id);
 
 
+//                    mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).addToBackStack(null).commit();
+//                    mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
+
+                    navigationManager(Config.NAV_YOUTUBE_STATE, false);
                 }
 
                 // close navigation menu
@@ -243,80 +246,98 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    /**
+     * Handle fragments navigation in the main activity
+     * @param nextState
+     */
+    public void navigationManager(int nextState, boolean isBackwardNavigation) {
 
+        if (mNavigationStack == null) {
+            mNavigationStack = new Stack<Integer>();
+        }
 
+        if (mFragmentManager == null) {
+            mFragmentManager = getSupportFragmentManager();
+        }
 
+        // if is backward navigation we extract the previous state from the stack
+        if (isBackwardNavigation) {
 
-    private void login() throws JSONException {
+            if (mNavigationStack.empty()) {
+                nextState = Config.NAV_DEFAULT_STATE;
+            }
 
-        RequestQueue queue = Volley.newRequestQueue(this);
+            else {
+                // pop current state
+                mNavigationStack.pop();
 
-        String url = "http://192.168.1.72:4500/auth/login";
-        String body = "{\"username\": \"ali\", \"password\": \"polipo\"}";
-        JSONObject jsonBody = new JSONObject(body);
+                // check again if stack empty
+                if (mNavigationStack.empty()) {
+                    nextState = Config.NAV_DEFAULT_STATE;
+                }
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    Log.d(LOG_TAG, response.toString(4));
-                    tags();
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                // else we get the previous state in the stack
+                else {
+                    nextState = mNavigationStack.pop();
                 }
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(LOG_TAG, error.toString());
-                try {
-                    tags();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        }
+        // otherwise we push the next state in the stack
+        else {
+            mNavigationStack.push(nextState);
+        }
 
 
-        queue.add(request);
+        switch (nextState) {
+
+            case Config.NAV_MAIN_STATE:
+                break;
+
+
+            case Config.NAV_LOGIN_STATE:
+                mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).addToBackStack(null).commit();
+                break;
+
+
+            case Config.NAV_REGISTER_STATE:
+                mFragmentManager.beginTransaction().replace(R.id.activity_main, new RegisterFragment()).addToBackStack(null).commit();
+                break;
+
+
+            case Config.NAV_YOUTUBE_STATE:
+                Fragment youtubeFragment = YoutubeFragment.newInstance();
+                mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment).commit();
+                // add only one to the backstack
+                mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment()).addToBackStack(null).commit();
+                break;
+
+
+            case Config.NAV_TAGS_STATE:
+                break;
+
+
+            case Config.NAV_MAPS_STATE:
+                break;
+
+
+            case Config.NAV_SETTINGS_STATE:
+                break;
+
+
+            case Config.NAV_INFO_STATE:
+                break;
+
+
+            default:
+                mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).commit();
+                break;
+        }
+
     }
 
 
 
 
-    private void tags() throws JSONException {
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        String url = "http://192.168.1.72:4500/api/update_tags";
-//        String body = "{\"value\":\"aaa1\"}";
-
-        JSONObject jsonBody = new JSONObject();
-
-        ArrayList<String> list = new ArrayList<String>();
-        list.add("chillout");
-        list.add("electronica");
-        jsonBody.put("value", new JSONArray(list));
-
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    Log.d(LOG_TAG, response.toString(4));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e(LOG_TAG, error.toString());
-            }
-        });
-
-
-        queue.add(request);
-    }
 
 
 

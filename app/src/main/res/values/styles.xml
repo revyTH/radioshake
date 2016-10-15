@@ -17,6 +17,10 @@
         <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
         <item name="android:buttonStyle">@style/RobotoButtonStyle</item>
         <item name="android:editTextStyle">@style/RobotoEditTextStyle</item>
+
+        <!--<item name="android:alertDialogStyle">@style/CustomAlertDialogStyle</item>-->
+        <!--<item name="android:windowBackground">@color/transparent</item>-->
+        <!--<item name="android:backgroundDimEnabled">false</item>-->
     </style>
 
     <style name="RobotoTextViewStyle" parent="android:Widget.TextView">
@@ -34,7 +38,20 @@
 
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+
+    <!--<style name="CustomAlertDialogStyle">-->
+        <!--<item name="android:bottomBright">@color/transparent</item>-->
+        <!--<item name="android:bottomDark">@color/transparent</item>-->
+        <!--<item name="android:bottomMedium">@color/transparent</item>-->
+        <!--<item name="android:centerBright">@color/transparent</item>-->
+        <!--<item name="android:centerDark">@color/transparent</item>-->
+        <!--<item name="android:centerMedium">@color/transparent</item>-->
+        <!--<item name="android:fullBright">@color/transparent</item>-->
+        <!--<item name="android:fullDark">@color/transparent</item>-->
+        <!--<item name="android:topBright">@color/transparent</item>-->
+        <!--<item name="android:topDark">@color/transparent</item>-->
+    <!--</style>-->
 
 </resources>
