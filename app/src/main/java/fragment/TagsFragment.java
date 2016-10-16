@@ -1,31 +1,46 @@
 package fragment;
 
+import android.app.FragmentManager;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.util.Pair;
+import android.support.v7.widget.AppCompatCheckBox;
+import android.support.v7.widget.AppCompatRadioButton;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.test.ludovicofabbri.radioshake.MainActivity;
 import com.test.ludovicofabbri.radioshake.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import utils.Config;
+import utils.MyJsonObjectRequest;
 import utils.Utils;
 
 /**
@@ -48,6 +63,8 @@ public class TagsFragment extends Fragment {
 
     private static final String LOG_TAG = TagsFragment.class.toString();
     private ArrayList<String> mTagsList;
+    private Map<String, Boolean> mTagsChosen;
+
 
     private OnFragmentInteractionListener mListener;
 
@@ -82,7 +99,10 @@ public class TagsFragment extends Fragment {
         }
 
         mTagsList = new ArrayList<String>();
+        mTagsChosen = new HashMap<String, Boolean>();
+
         initTags();
+
     }
 
     @Override
@@ -132,15 +152,19 @@ public class TagsFragment extends Fragment {
     }
 
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
 
-
-
+        // initialize button(s)
+        initButtons();
+    }
 
     private void initTags() {
 
         RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
 
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, Config.PY_SERVER_TAGS_URL, null, new Response.Listener<JSONArray>() {
+        JsonArrayRequest tagsRequest = new JsonArrayRequest(Request.Method.GET, Config.PY_SERVER_TAGS_URL, null, new Response.Listener<JSONArray>() {
             @Override
             public void onResponse(JSONArray response) {
 
@@ -150,9 +174,10 @@ public class TagsFragment extends Fragment {
                     for (int i = 0; i < response.length(); i++) {
                         String s = (String)response.get(i);
                         mTagsList.add(s);
+                        mTagsChosen.put(s, false);
                     }
 
-                    initUI();
+                    initUserTags();
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -166,8 +191,46 @@ public class TagsFragment extends Fragment {
             }
         });
 
-        requestQueue.add(request);
+        requestQueue.add(tagsRequest);
 
+    }
+
+
+
+    private void initUserTags() {
+
+        RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        JsonObjectRequest userTagsRequest = new JsonObjectRequest(Request.Method.GET, Config.PY_SERVER_USER_TAGS_URL, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+
+                    JSONArray jsonArray = (JSONArray) response.get("value");
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        String tag = (String)jsonArray.get(i);
+                        mTagsChosen.put(tag, true);
+                    }
+
+                    initUI();
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+                // init UI in any case
+                initUI();
+            }
+        });
+
+        requestQueue.add(userTagsRequest);
     }
 
 
@@ -178,59 +241,194 @@ public class TagsFragment extends Fragment {
         if (mTagsList == null) {
             return;
         }
-        
-        ArrayList<CheckBox> checkBoxes = new ArrayList<CheckBox>();
+
 
         for (int i = 0; i < mTagsList.size(); i++) {
 
-            if (i != 0 && i % 2 == 0) {
-
-                RelativeLayout relativeLayout = new RelativeLayout(getActivity());
-
-                RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-                        RelativeLayout.LayoutParams.MATCH_PARENT,
-                        RelativeLayout.LayoutParams.WRAP_CONTENT
-                );
-
-                relativeLayout.setLayoutParams(layoutParams);
+            // container for checkboxes
+            RelativeLayout layout = new RelativeLayout(getActivity());
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+//            layout.setPadding(16, 16, 16, 16);
+            layout.setLayoutParams(params);
 
 
-                RelativeLayout.LayoutParams checkbox_relativeParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                checkbox_relativeParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
 
-                relativeLayout.addView(checkBoxes.get(0), checkbox_relativeParams);
+            // left checkbox
+//            CheckBox checkBoxLeft = new CheckBox(getActivity());
+            AppCompatCheckBox checkBoxLeft = new AppCompatCheckBox(getActivity());
+            setCheckBoxColor(checkBoxLeft, getResources().getColor(R.color.white), getResources().getColor(R.color.white));
+            checkBoxLeft.setPadding(16, 16, 16, 16);
+            checkBoxLeft.setText(mTagsList.get(i));
+            if (mTagsChosen.get(mTagsList.get(i))) {
+                checkBoxLeft.setChecked(true);
+            }
+            checkBoxLeft.setTextSize(18f);
+            checkBoxLeft.setTextColor(getResources().getColor(R.color.white));
+            RelativeLayout.LayoutParams leftParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            leftParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            leftParams.addRule(RelativeLayout.CENTER_VERTICAL);
+            checkBoxLeft.setLayoutParams(leftParams);
 
-                checkbox_relativeParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                checkbox_relativeParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            // add event listener for leftCheckbox
+            checkBoxLeft.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
-                if (checkBoxes.size() > 1) {
-                    relativeLayout.addView(checkBoxes.get(1), checkbox_relativeParams);
+                    String tag = compoundButton.getText().toString();
+                    utils.Utils.createOkToast(getActivity(), "Selected " + tag, 3000).show();
 
-                    LinearLayout tagsList = (LinearLayout)getActivity().findViewById(R.id.tags_list);
-                    tagsList.addView(relativeLayout);
+                    if (compoundButton.isChecked()) {
+                        mTagsChosen.put(tag, true);
+                    }
+                    else {
+                        mTagsChosen.put(tag, false);
+                    }
                 }
+            });
 
 
+            i = i + 1;
 
-                checkBoxes.clear();
-
+            if (i == mTagsList.size()) {
+                layout.addView(checkBoxLeft);
+                LinearLayout tagsList = (LinearLayout)getActivity().findViewById(R.id.tags_list);
+                tagsList.addView(layout);
+                return;
             }
 
-            else {
-                CheckBox checkBox = new CheckBox(getActivity());
-                checkBox.setText(mTagsList.get(i));
-                checkBox.setPadding(16, 16, 16, 16);
-                checkBox.setTextColor(getResources().getColor(R.color.white));
-
-                checkBoxes.add(checkBox);
+            // right checkbox
+//            CheckBox checkBoxRight = new CheckBox(getActivity());
+            AppCompatCheckBox checkBoxRight = new AppCompatCheckBox(getActivity());
+            setCheckBoxColor(checkBoxRight, getResources().getColor(R.color.white), getResources().getColor(R.color.white));
+            checkBoxRight.setPadding(16, 16, 16, 16);
+            checkBoxRight.setText(mTagsList.get(i));
+            if (mTagsChosen.get(mTagsList.get(i))) {
+                checkBoxRight.setChecked(true);
             }
+            checkBoxRight.setTextSize(18f);
+            checkBoxRight.setTextColor(getResources().getColor(R.color.white));
+            RelativeLayout.LayoutParams rightParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rightParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            rightParams.addRule(RelativeLayout.CENTER_VERTICAL);
+            checkBoxRight.setLayoutParams(rightParams);
 
 
+            // add event listener for rightCheckbox
+            checkBoxRight.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
+                    String tag = compoundButton.getText().toString();
+                    utils.Utils.createOkToast(getActivity(), "Selected " + tag, 3000).show();
+
+                    if (compoundButton.isChecked()) {
+                        mTagsChosen.put(tag, true);
+                    }
+                    else {
+                        mTagsChosen.put(tag, false);
+                    }
+                }
+            });
+
+            layout.addView(checkBoxLeft);
+            layout.addView(checkBoxRight);
+            LinearLayout tagsList = (LinearLayout)getActivity().findViewById(R.id.tags_list);
+            tagsList.addView(layout);
 
 
         }
 
+    }
+
+
+
+    private void initButtons() {
+
+        Button setTagsButton = (Button)getActivity().findViewById(R.id.set_tags_btn);
+
+        setTagsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                final Button button = (Button)view;
+                button.setClickable(false);
+
+                final RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+
+                ArrayList<String> tagsChosenList = new ArrayList<String>();
+                Iterator it = mTagsChosen.entrySet().iterator();
+
+                while (it.hasNext()) {
+                    Map.Entry<String, Boolean> pair = (Map.Entry<String, Boolean>)it.next();
+                    if (pair.getValue()) {
+                        tagsChosenList.add(pair.getKey());
+                    }
+                }
+
+
+                if (tagsChosenList.size() == 0) {
+                    Utils.createErrorToast(getActivity(), "Please select at least one music tag", 4000).show();
+                    button.setClickable(true);
+                    return;
+                }
+
+
+                JSONObject body = new JSONObject();
+                JSONArray bodyValue = new JSONArray(tagsChosenList);
+                try {
+                    body.put("value", bodyValue);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_UPDATE_TAGS_URL, body, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Log.d(LOG_TAG, response.toString(4));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        button.setClickable(true);
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(LOG_TAG, error.toString());
+                        button.setClickable(true);
+
+                        if (error.networkResponse.statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
+                            Utils.createErrorToast(getActivity(), "You are not logged in: please login", 4000).show();
+                            android.support.v4.app.FragmentManager manager = ((MainActivity)getActivity()).getMainFragmentManager();
+                            manager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).addToBackStack(null).commit();
+
+                        }
+                    }
+                });
+
+                requestQueue.add(request);
+
+            }
+        });
+
+    }
+
+
+
+    private static void setCheckBoxColor(AppCompatCheckBox checkBox, int uncheckedColor, int checkedColor) {
+        ColorStateList colorStateList = new ColorStateList(
+                new int[][] {
+                        new int[] { -android.R.attr.state_checked }, // unchecked
+                        new int[] {  android.R.attr.state_checked }  // checked
+                },
+                new int[] {
+                        uncheckedColor,
+                        checkedColor
+                }
+        );
+        checkBox.setSupportButtonTintList(colorStateList);
     }
 
 

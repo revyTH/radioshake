@@ -1,16 +1,18 @@
 
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/gradient_background_1"
     tools:context="fragment.TagsFragment"
     >
 
     <!--title-->
     <TextView
         android:id="@+id/title"
+        android:layout_alignParentTop="true"
         android:padding="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,9 +25,12 @@
     <!--scroll tags list-->
     <ScrollView
         android:id="@+id/tags_scroll_list"
+        android:layout_below="@+id/title"
+        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
+        android:layout_height="match_parent">
+
+
 
 
         <!--tags list-->
@@ -34,41 +39,30 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-
-
-
-
-            <!--<FrameLayout-->
-                <!--android:layout_marginTop="20dp"-->
-                <!--android:layout_width="400dp"-->
-                <!--android:layout_height="400dp"-->
-                <!--android:background="@color/colorPrimary"/>-->
-
-            <!--<FrameLayout-->
-                <!--android:layout_marginTop="20dp"-->
-                <!--android:layout_width="400dp"-->
-                <!--android:layout_height="400dp"-->
-                <!--android:background="@color/lightBlue"/>-->
-
-            <!--<FrameLayout-->
-                <!--android:layout_marginTop="20dp"-->
-                <!--android:layout_width="400dp"-->
-                <!--android:layout_height="400dp"-->
-                <!--android:background="@color/colorAccent"/>-->
-
-            <!--<FrameLayout-->
-                <!--android:layout_marginTop="20dp"-->
-                <!--android:layout_width="400dp"-->
-                <!--android:layout_height="400dp"-->
-                <!--android:background="@color/darkBlue"/>-->
-
         </LinearLayout>
-
-
-
-
 
     </ScrollView>
 
 
-</LinearLayout>
+
+    <Button
+        android:id="@+id/set_tags_btn"
+        android:layout_centerInParent="true"
+
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="center"
+        android:background="@drawable/done_big_icon"
+        />
+
+
+
+
+</RelativeLayout>
+
+
+
+

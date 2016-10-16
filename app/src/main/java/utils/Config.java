@@ -34,7 +34,9 @@ public final class Config {
 
     public static final String PY_SERVER_REGISTER_URL = PY_SERVER_BASE_URL + "/auth/register";
     public static final String PY_SERVER_LOGIN_URL = PY_SERVER_BASE_URL + "/auth/login";
+    public static final String PY_SERVER_AUTHORIZED_URL = PY_SERVER_BASE_URL + "/auth/isauthorized";
     public static final String PY_SERVER_TAGS_URL = PY_SERVER_BASE_URL + "/api/tags";
+    public static final String PY_SERVER_USER_TAGS_URL = PY_SERVER_BASE_URL + "/api/user_tags";
     public static final String PY_SERVER_UPDATE_TAGS_URL = PY_SERVER_BASE_URL + "/api/update_tags";
     public static final String PY_SERVER_UPDATE_DISLIKES_URL = PY_SERVER_BASE_URL + "/api/update_dislikes";
     public static final String PY_SERVER_UPDATE_LISTENED_URL = PY_SERVER_BASE_URL + "/api/update_listened";
