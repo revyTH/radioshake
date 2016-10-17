@@ -231,6 +231,7 @@ public class LoginFragment extends Fragment {
             public void onErrorResponse(VolleyError error) {
 
                 try {
+                    Log.e(LOG_TAG, error.toString());
                     String statusCode = String.valueOf(error.networkResponse.statusCode);
                     JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
                     String message = jsonResponse.getString("value");

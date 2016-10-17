@@ -20,6 +20,7 @@ import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -34,6 +35,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -275,13 +277,15 @@ public class TagsFragment extends Fragment {
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
                     String tag = compoundButton.getText().toString();
-                    utils.Utils.createOkToast(getActivity(), "Selected " + tag, 3000).show();
+
 
                     if (compoundButton.isChecked()) {
                         mTagsChosen.put(tag, true);
+                        utils.Utils.createOkToast(getActivity(), "Checked " + tag, 3000).show();
                     }
                     else {
                         mTagsChosen.put(tag, false);
+                        utils.Utils.createOkToast(getActivity(), "Unchecked " + tag, 3000).show();
                     }
                 }
             });
@@ -319,13 +323,15 @@ public class TagsFragment extends Fragment {
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
                     String tag = compoundButton.getText().toString();
-                    utils.Utils.createOkToast(getActivity(), "Selected " + tag, 3000).show();
+
 
                     if (compoundButton.isChecked()) {
                         mTagsChosen.put(tag, true);
+                        utils.Utils.createOkToast(getActivity(), "Checked " + tag, 3000).show();
                     }
                     else {
                         mTagsChosen.put(tag, false);
+                        utils.Utils.createOkToast(getActivity(), "Unchecked " + tag, 3000).show();
                     }
                 }
             });
@@ -388,6 +394,8 @@ public class TagsFragment extends Fragment {
                     public void onResponse(JSONObject response) {
                         try {
                             Log.d(LOG_TAG, response.toString(4));
+                            String message = response.getString("value");
+                            Utils.createOkToast(getActivity(), message, 3000).show();
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -397,14 +405,30 @@ public class TagsFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.e(LOG_TAG, error.toString());
-                        button.setClickable(true);
+                        try {
+                            String statusCode = String.valueOf(error.networkResponse.statusCode);
+                            JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
+                            String message = jsonResponse.getString("value");
+                            Utils.createErrorToast(getActivity(), message, 3000).show();
+                            Log.e(LOG_TAG, message);
+                        }
+                        catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                            Utils.createErrorToast(getActivity(), "Whoops, an error occurred", 3000).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Utils.createErrorToast(getActivity(), "Whoops, an error occurred", 3000).show();
+                        }
+
 
                         if (error.networkResponse.statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
-                            Utils.createErrorToast(getActivity(), "You are not logged in: please login", 4000).show();
+                            Utils.createErrorToast(getActivity(), "You are not logged in: please login", 3000).show();
                             android.support.v4.app.FragmentManager manager = ((MainActivity)getActivity()).getMainFragmentManager();
                             manager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).addToBackStack(null).commit();
 
                         }
+
+                        button.setClickable(true);
                     }
                 });
 

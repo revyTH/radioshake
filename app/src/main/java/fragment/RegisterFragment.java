@@ -257,6 +257,8 @@ public class RegisterFragment extends Fragment {
             @Override
             public void onErrorResponse(VolleyError error) {
 
+                Log.e(LOG_TAG, error.toString());
+
                 try {
                     String statusCode = String.valueOf(error.networkResponse.statusCode);
                     JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));

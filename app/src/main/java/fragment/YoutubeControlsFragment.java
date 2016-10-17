@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -92,6 +93,10 @@ public class YoutubeControlsFragment extends Fragment {
 
         // get RequestQeue from the MainActivity
         this.mRequestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        // restore start_music button clickable
+        Button startMusicBtn = (Button)((MainActivity)getActivity()).findViewById(R.id.start_music);
+        startMusicBtn.setClickable(true);
     }
 
     @Override
@@ -153,6 +158,8 @@ public class YoutubeControlsFragment extends Fragment {
 
         //initialize youtube controls
         initControls();
+
+        loadNextTrack();
     }
 
 
@@ -226,35 +233,9 @@ public class YoutubeControlsFragment extends Fragment {
 
     /**
      * playControlHandler
+     * @param control
      */
     private void playControlHandler(final ImageButton control) {
-
-
-        // first check if there are already recommendations in SharedPreferences
-        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-        String jsonString = sharedPref.getString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, null);
-        if (jsonString != null) {
-            int index = sharedPref.getInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
-            try {
-                JSONArray recommendedTracks = new JSONArray(jsonString);
-                JSONObject nextTrack = (JSONObject) recommendedTracks.get(index);
-                String artistName = nextTrack.getString(Config.ARTIST_NAME);
-                String songTitle = nextTrack.getString(Config.SONG_TITLE);
-                loadYoutubeVideo(artistName, songTitle);
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            // re-enable control
-            control.setClickable(true);
-            return;
-        }
-
-
-
-
 
         YouTubePlayer activePlayer = YoutubeFragment.getActivePlayer();
 
@@ -262,76 +243,27 @@ public class YoutubeControlsFragment extends Fragment {
             return;
         }
 
-//        if (!activePlayer.isPlaying()) {
-//            activePlayer.play();
-//        }
-
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, Config.PY_SERVER_NEXT_TRACKS_URL, null, new Response.Listener<JSONArray>() {
-
-            @Override
-            public void onResponse(JSONArray response) {
-
-
-                try {
-                    Log.d(LOG_TAG, response.toString(4));
-                    SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, response.toString());
-                    editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
-                    editor.commit();
-
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                // re-enable ImageButton control
-                control.setClickable(true);
+        if (!activePlayer.isPlaying()) {
+            try {
+                activePlayer.play();
             }
-
-        }, new Response.ErrorListener() {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-
-
-                try {
-                    int statusCode = error.networkResponse.statusCode;
-                    JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
-                    String message = jsonResponse.getString("value");
-                    Utils.createErrorToast(getActivity(), message, 3000).show();
-                    Log.e(LOG_TAG, message);
-
-                    if (statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
-                        FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
-                        fragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment()).addToBackStack(null).commit();
-                    }
-                }
-                catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                    Toast.makeText(getActivity(), "Whoops! An error occurred.", Toast.LENGTH_LONG).show();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    Toast.makeText(getActivity(), "Whoops! An error occurred.", Toast.LENGTH_LONG).show();
-                }
-
-                // re-enable ImageButton control
-                control.setClickable(true);
+            catch (IllegalStateException e) {
+                e.printStackTrace();
             }
+        }
 
-        });
-
-
-        mRequestQueue.add(request);
+        // re-enable control
+        control.setClickable(true);
 
     }
 
 
-
-
-
-
+    /**
+     * pauseControlHandler
+     * @param control
+     */
     private void pauseControlHandler(final ImageButton control) {
+
         YouTubePlayer activePlayer = YoutubeFragment.getActivePlayer();
 
         if (activePlayer == null) {
@@ -339,21 +271,107 @@ public class YoutubeControlsFragment extends Fragment {
         }
 
         if (activePlayer.isPlaying()) {
-            activePlayer.pause();
+            try {
+                activePlayer.pause();
+            }
+            catch (IllegalStateException e) {
+                e.printStackTrace();
+            }
+
         }
+
+        // re-enable control
+        control.setClickable(true);
     }
 
+
+    /**
+     * forwardControlHandler
+     * @param control
+     */
     private void forwardControlHandler(final ImageButton control) {
 
+        // increment the track index in SharedPreferences
+        SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        int index = sharedPreferences.getInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0) + 1;
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, index);
+        editor.commit();
+
+        loadNextTrack();
+
+        // re-enable control
+        control.setClickable(true);
+
     }
 
+    /**
+     * dislikeControlHandler
+     * @param control
+     */
     private void dislikeControlHandler(final ImageButton control) {
 
+        RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        String trackID = sharedPref.getString(Config.SHARED_PREF_LAST_CURRENT_TRACK, null);
+
+        if (trackID == null) {
+            Utils.createErrorToast(getActivity(), "No track loaded", 3000).show();
+            return;
+        }
+
+        String jsonString = String.format("{\"value\":\"%s\"}", trackID);
+        JSONObject body = null;
+        try {
+            body = new JSONObject(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_UPDATE_DISLIKES_URL, body, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+
+                try {
+                    JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
+                    String message = jsonResponse.getString("value");
+                    Utils.createErrorToast(getActivity(), message, 3000).show();
+                    Log.e(LOG_TAG, message);
+                }
+                catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+            }
+        });
+
+        // send request
+        requestQueue.add(request);
+
+        // re-enable control
+        control.setClickable(true);
     }
 
 
-
-
+    /**
+     * infoControlHandler
+     * @param control
+     */
     private void infoControlHandler(final ImageButton control) {
 
         SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -375,24 +393,115 @@ public class YoutubeControlsFragment extends Fragment {
 
 
 
+    /**
+     * loadNextTrack
+     */
+    private void loadNextTrack() {
+
+        try {
+            SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+            String jsonArrayString = sharedPreferences.getString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, null);
+
+            // if we have already some recommended tracks
+            if (jsonArrayString != null) {
+                int index = sharedPreferences.getInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
+                JSONArray tracks = new JSONArray(jsonArrayString);
+
+                // if index is in range, we load the track
+                if (index < tracks.length()) {
+                    JSONObject track = (JSONObject)tracks.get(index);
+                    String trackID = track.getString(Config.TRACK_ID);
+                    String artistName = track.getString(Config.ARTIST_NAME);
+                    String songTitle = track.getString(Config.SONG_TITLE);
+                    loadYoutubeVideo(trackID, artistName, songTitle);
+                    return;
+                }
+                // otherwise get next track(s) from server
+                else {
+                    getNextTracksFromServer();
+                    return;
+                }
+            }
+            // otherwise get next track(s) from server
+            else {
+                getNextTracksFromServer();
+                return;
+            }
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 
 
 
 
 
+    /**
+     * getNextTracksFromServer
+     */
+    private void getNextTracksFromServer() {
+
+        RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, Config.PY_SERVER_NEXT_TRACKS_URL, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+                try {
+                    JSONArray tracks = (JSONArray)response.get("value");
+                    SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, tracks.toString());
+                    editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
+                    editor.commit();
+
+                    loadNextTrack();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                Log.e(LOG_TAG, error.toString());
+
+                if (error.networkResponse.statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
+                    Utils.createErrorToast(getActivity(), "You are not logged in: please sign in", 3000).show();
+                    ((MainActivity)getActivity()).navigationManager(Config.NAV_LOGIN_STATE);
+                }
+
+            }
+        });
+
+        requestQueue.add(request);
+
+    }
 
 
 
 
 
-
-
-
-
-
-
-    public void loadYoutubeVideo(String artistName, String songTitle) {
+    /**
+     * loadYoutubeVideo
+     * @param artistName
+     * @param songTitle
+     */
+    public void loadYoutubeVideo(final String trackID, String artistName, String songTitle) {
 
         final YouTubePlayer activePlayer = YoutubeFragment.getActivePlayer();
 
@@ -417,11 +526,31 @@ public class YoutubeControlsFragment extends Fragment {
                         try {
                             Log.w(LOG_TAG, response.names().toString(4));
                             JSONArray items = (JSONArray)response.get("items");
+
+                            // if there are no videos, get next track
+                            if (items.length() == 0) {
+                                loadNextTrack();
+                                return;
+                            }
+
                             JSONObject firstResult = items.getJSONObject(0);
-                            Log.w(LOG_TAG, firstResult.toString(4));
                             String videoId = firstResult.getJSONObject("id").getString("videoId");
-                            Log.w(LOG_TAG, videoId);
-                            activePlayer.loadVideo(videoId, 0);
+                            try {
+                                activePlayer.loadVideo(videoId, 0);
+
+                                // add current playing track to preferences
+                                SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+                                SharedPreferences.Editor editor = sharedPref.edit();
+                                editor.putString(Config.SHARED_PREF_LAST_CURRENT_TRACK, trackID);
+                                editor.commit();
+
+                                // send current track as listened to the server
+                                updateListenedTracks(trackID);
+                            }
+                            catch (IllegalStateException e) {
+                                Log.e(LOG_TAG, e.toString());
+                            }
+
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -438,10 +567,61 @@ public class YoutubeControlsFragment extends Fragment {
 
         // Add the request to the RequestQueue.
         mRequestQueue.add(request);
-
     }
 
 
+    /**
+     * updateListenedTracks
+     * @param trackID
+     */
+    private void updateListenedTracks(String trackID) {
+
+        RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        String jsonString = String.format("{\"value\":\"%s\"}", trackID);
+        JSONObject body = null;
+        try {
+            body = new JSONObject(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if (body == null) {
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_UPDATE_LISTENED_URL, body, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+
+                try {
+                    JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
+                    String message = jsonResponse.getString("value");
+                    Utils.createErrorToast(getActivity(), message, 3000).show();
+                    Log.e(LOG_TAG, message);
+                }
+                catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+
+        // send request
+        requestQueue.add(request);
+
+    }
 
 
 

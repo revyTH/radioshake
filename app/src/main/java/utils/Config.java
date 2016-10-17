@@ -30,6 +30,7 @@ public final class Config {
 //    public static final String PY_SERVER_BASE_URL = "http://192.168.1.72:4500";
     public static final String PY_SERVER_BASE_URL = "http://192.168.1.75:4500";
 //    public static final String PY_SERVER_BASE_URL = "http://2.236.20.78:4500";
+//    public static final String PY_SERVER_BASE_URL = "http://192.168.43.101:4500";
 //    public static final String PY_SERVER_BASE_URL = "http://172.20.10.3:4500";
 
     public static final String PY_SERVER_REGISTER_URL = PY_SERVER_BASE_URL + "/auth/register";
@@ -42,6 +43,7 @@ public final class Config {
     public static final String PY_SERVER_UPDATE_LISTENED_URL = PY_SERVER_BASE_URL + "/api/update_listened";
     public static final String PY_SERVER_SET_TELEPORT_URL = PY_SERVER_BASE_URL + "/api/set_teleport";
     public static final String PY_SERVER_SET_SHARE_POSITION_URL = PY_SERVER_BASE_URL + "/api/set_share_position";
+    public static final String PY_SERVER_UPDATE_POSITION_URL = PY_SERVER_BASE_URL + "/api/update_position";
     public static final String PY_SERVER_SET_ACTIVE_URL = PY_SERVER_BASE_URL + "/api/set_active";
     public static final String PY_SERVER_NEXT_TRACKS_URL = PY_SERVER_BASE_URL + "/api/next_tracks";
 
@@ -49,6 +51,7 @@ public final class Config {
     public static final int HTTP_STATUS_CODE_OK = 200;
     public static final int HTTP_STATUS_CODE_CREATED = 201;
     public static final int HTTP_STATUS_CODE_NO_CONTENT = 204;
+    public static final int HTTP_STATUS_CODE_NOT_MODIFIED = 304;
     public static final int HTTP_STATUS_CODE_ERROR = 400;
     public static final int HTTP_STATUS_CODE_UNAUTHORIZED = 401;
     public static final int HTTP_STATUS_CODE_SERVER_ERROR = 500;
@@ -56,7 +59,12 @@ public final class Config {
 
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS = "Last_Recommendations";
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS_INDEX = "Last_Recommendations_index";
+    public static final String SHARED_PREF_LAST_CURRENT_TRACK = "Last_Recommendations_Current_Playing_Track";
+    public static final String TRACK_ID = "trackid";
     public static final String ARTIST_NAME = "artist_name";
     public static final String SONG_TITLE = "song_title";
+
+    public static final int PERMISSION_REQUEST_LOCATION = 101;
+
 
 }

@@ -1,10 +1,20 @@
 package com.test.ludovicofabbri.radioshake;
 
+import android.*;
+import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationListener;
 import android.net.Uri;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -14,10 +24,23 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -30,11 +53,10 @@ import fragment.TagsFragment;
 import fragment.YoutubeControlsFragment;
 import fragment.YoutubeFragment;
 import utils.Config;
+import utils.Utils;
 
 
-
-
-public class MainActivity extends AppCompatActivity implements
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
         LoginFragment.OnFragmentInteractionListener,
         RegisterFragment.OnFragmentInteractionListener,
         YoutubeControlsFragment.OnFragmentInteractionListener,
@@ -49,8 +71,36 @@ public class MainActivity extends AppCompatActivity implements
     private ListView mSidebarList;
     private FragmentManager mFragmentManager;
     private Stack<Integer> mNavigationStack;
+    private GoogleMap mGoogleMap;
+    private LocationManager mLocationManager;
+    private final LocationListener mLocationListener = new LocationListener() {
 
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(LOG_TAG, location.toString());
 
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+
+            sendCurrentLocation(latitude, longitude);
+
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+
+        }
+    };
 
 
     /**
@@ -63,8 +113,6 @@ public class MainActivity extends AppCompatActivity implements
         }
         return this.mContext;
     }
-
-
 
 
     /**
@@ -91,9 +139,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,16 +157,40 @@ public class MainActivity extends AppCompatActivity implements
         this.mRequestQueue = Volley.newRequestQueue(this);
 
 
+        this.mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+
+
+        askLocationPermissions();
+
         initToolbar();
 
-
         initSidebar();
+
+        initButtons();
+
+
+        // for debug: clear SharedPreferences
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.clear();
+        editor.commit();
 
 
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+
+            Criteria criteria = new Criteria();
+            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            String provider = mLocationManager.getBestProvider(criteria, false);
+            mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
+        }
+    }
 
 
 
@@ -139,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements
     public void onFragmentInteraction(Uri uri) {
 
     }
-
 
 
     @Override
@@ -168,9 +236,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-
-
-
     /**
      * initialize Toolbar
      */
@@ -196,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements
     private void initSidebar() {
 
         ArrayAdapter<String> mListAdapter;
-        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags"};
+        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags", "Maps"};
 
         mSidebarList = (ListView) findViewById(R.id.sidebar_list);
         mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
@@ -237,6 +302,10 @@ public class MainActivity extends AppCompatActivity implements
                         nextState = Config.NAV_TAGS_STATE;
                         break;
 
+                    case 5:
+                        nextState = Config.NAV_MAPS_STATE;
+                        break;
+
                     default:
                         onFragmentBackToMain("Back to main?");
                         mDrawerLayout.closeDrawers();
@@ -250,6 +319,26 @@ public class MainActivity extends AppCompatActivity implements
                 // close navigation menu
                 mDrawerLayout.closeDrawers();
 
+            }
+        });
+
+    }
+
+
+    /**
+     * init buttons
+     */
+    private void initButtons() {
+
+        Button startMusicButton = (Button) findViewById(R.id.start_music);
+        startMusicButton.setClickable(true);
+
+        startMusicButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Button btn = (Button) view;
+                btn.setClickable(false);
+                navigationManager(Config.NAV_YOUTUBE_STATE);
             }
         });
 
@@ -272,14 +361,14 @@ public class MainActivity extends AppCompatActivity implements
         switch (nextState) {
 
             case Config.NAV_LOGIN_STATE:
-                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment());
+                transaction = mFragmentManager.beginTransaction().replace(R.id.activity_main, new LoginFragment());
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 transaction.addToBackStack(null).commit();
                 break;
 
 
             case Config.NAV_REGISTER_STATE:
-                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new RegisterFragment());
+                transaction = mFragmentManager.beginTransaction().replace(R.id.activity_main, new RegisterFragment());
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 transaction.addToBackStack(null).commit();
                 break;
@@ -287,8 +376,8 @@ public class MainActivity extends AppCompatActivity implements
 
             case Config.NAV_YOUTUBE_STATE:
                 Fragment youtubeFragment = YoutubeFragment.newInstance();
-                FragmentTransaction transaction1 =  mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment);
-                FragmentTransaction transaction2 =  mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment());
+                FragmentTransaction transaction1 = mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment);
+                FragmentTransaction transaction2 = mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment());
                 transaction1.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 transaction2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 transaction1.addToBackStack(null).commit();
@@ -297,13 +386,18 @@ public class MainActivity extends AppCompatActivity implements
 
 
             case Config.NAV_TAGS_STATE:
-                transaction =  mFragmentManager.beginTransaction().replace(R.id.activity_main, new TagsFragment());
+                transaction = mFragmentManager.beginTransaction().replace(R.id.activity_main, new TagsFragment());
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                 transaction.addToBackStack(null).commit();
                 break;
 
 
             case Config.NAV_MAPS_STATE:
+                SupportMapFragment mapFragment = SupportMapFragment.newInstance();
+                mapFragment.getMapAsync(this);
+                transaction = mFragmentManager.beginTransaction().replace(R.id.activity_main, mapFragment);
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.addToBackStack(null).commit();
                 break;
 
 
@@ -315,7 +409,6 @@ public class MainActivity extends AppCompatActivity implements
                 break;
 
 
-
             default:
 //                findViewById(R.id.start_music_main).setVisibility(View.VISIBLE);
                 break;
@@ -324,7 +417,117 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
 
+        mGoogleMap = googleMap;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mGoogleMap.setMyLocationEnabled(true);
+            mGoogleMap.setTrafficEnabled(true);
+            mGoogleMap.setIndoorEnabled(true);
+            mGoogleMap.setBuildingsEnabled(true);
+            mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
+        }
+
+        mGoogleMap.addMarker(new MarkerOptions()
+                .position(new LatLng(0, 0))
+                .title("Marker"));
+
+
+
+
+    }
+
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+
+        switch (requestCode) {
+
+            case Config.PERMISSION_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+
+
+
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Log.d(LOG_TAG, "LOCATION PERMISSION GRANTED");
+
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+
+                        Criteria criteria = new Criteria();
+                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                        String provider = mLocationManager.getBestProvider(criteria, false);
+                        mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
+                    }
+
+
+                    } else {
+                        // Permission was denied. Display an error message.
+                        Log.e(LOG_TAG, "LOCATION PERMISSION DENIED");
+                    }
+
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+
+
+
+
+    /**
+     * askLocationPermissions at startup
+     */
+    private void askLocationPermissions() {
+
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                Config.PERMISSION_REQUEST_LOCATION);
+
+    }
+
+
+
+    /**
+     * sendCurrentLocation
+     */
+    public void sendCurrentLocation(double latitude, double longitude) {
+
+        String jsonString = "{\"value\" : {\"latitude\":" + latitude + ", \"longitude\":" + longitude + "}}";
+        JSONObject body = null;
+        try {
+            body = new JSONObject(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_UPDATE_POSITION_URL, body, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    Utils.createOkToast(getContext(), response.getString("value"), 2000);   // delete me
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+            }
+        });
+
+        mRequestQueue.add(request);
+
+    }
 
 
 

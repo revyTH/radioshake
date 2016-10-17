@@ -105,16 +105,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
                 if (!wasRestored) {
 
-//                    activePlayer.loadVideo(getArguments().getString("url"), 0);
-
-//                    activePlayer.cueVideo(getArguments().getString("url"), 20000);
-
-                    try {
-                        testVolley();
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-
+                    // do something?
 
                 }
 
@@ -128,11 +119,10 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
                     }});
             }
         });
-
-
-
-
     }
+
+
+
 
     @Override
     public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
@@ -156,88 +146,6 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
         layoutParams.height = height - 150;
         getView().setLayoutParams(layoutParams);
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-    public void testVolley() throws UnsupportedEncodingException {
-
-        RequestQueue queue = Volley.newRequestQueue((MainActivity)getActivity());
-
-        String query = URLEncoder.encode("Blue Stahli Ultranumb", "UTF-8");
-        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video&videoEmbeddable=true";
-
-
-
-        JsonObjectRequest jsonObjRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-
-//                        Log.w(LOG_TAG, response.names().toString(4));
-
-                            JSONArray items = (JSONArray)response.get("items");
-                            JSONObject firstResult = items.getJSONObject(0);
-                            Log.w(LOG_TAG, firstResult.toString(4));
-                            String videoId = firstResult.getJSONObject("id").getString("videoId");
-                            Log.w(LOG_TAG, videoId);
-                            activePlayer.loadVideo(videoId, 0);
-
-
-//                        Log.w(LOG_TAG, response.toString(4));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(LOG_TAG, error.toString());
-                    }
-                });
-
-
-
-        url = "http://192.168.1.72:4500/api/tags";
-
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
-
-                    @Override
-                    public void onResponse(JSONArray response) {
-//                    Log.w(LOG_TAG, response.toString());
-                    }
-
-
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(LOG_TAG, "Volley error.");
-                    }
-                });
-
-
-
-
-
-        // Add the request to the RequestQueue.
-        queue.add(jsonObjRequest);
-//        queue.add(jsonArrayRequest);
-
     }
 
 
