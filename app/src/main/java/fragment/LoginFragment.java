@@ -188,7 +188,7 @@ public class LoginFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 Log.d(LOG_TAG, "Register called");
-                ((MainActivity)getActivity()).navigationManager(Config.NAV_REGISTER_STATE);
+                ((MainActivity)getActivity()).navigationManager(Config.NAV_REGISTER_STATE, null);
             }
         });
 

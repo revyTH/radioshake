@@ -148,6 +148,15 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        SharedPreferences sharedPref = getActivity().getPreferences(MODE_PRIVATE);
+
+        if (sharedPref.contains(Config.SHARED_PREF_SHARE_POSITION)) {
+
+            boolean checked = sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false);
+            sharePositionSwitch.setChecked(checked);
+
+        }
+
     }
 
 
@@ -171,57 +180,56 @@ public class SettingsFragment extends Fragment {
 
         RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
 
-       final SharedPreferences sharedPref = getActivity().getPreferences(MODE_PRIVATE);
-
-        if (!sharedPref.contains(Config.SHARED_PREF_SHARE_POSITION) || sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false) != flag) {
-
-            String jsonString = "{\"value\": " + flag + "}";
-            JSONObject body = null;
-            try {
-                body = new JSONObject(jsonString);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_SET_SHARE_POSITION_URL, body, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    try {
-                        Log.d(LOG_TAG, response.toString(4));
-                        Utils.createOkToast(getContext(), response.getString("value"), 3000).show();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean(Config.SHARED_PREF_SHARE_POSITION, flag);
-                    editor.commit();
-
-                    control.setClickable(true);
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e(LOG_TAG, error.toString());
-                    try {
-                        JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
-                        String message = jsonResponse.getString("value");
-                        Utils.createErrorToast(getContext(), message, 3000).show();
-                        Log.e(LOG_TAG, message);
-                    }
-                    catch (JSONException | UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-
-                    control.setChecked(false);
-                    control.setClickable(true);
+        final SharedPreferences sharedPref = getActivity().getPreferences(MODE_PRIVATE);
 
 
-                }
-            });
-
-            requestQueue.add(request);
+        String jsonString = "{\"value\": " + flag + "}";
+        JSONObject body = null;
+        try {
+            body = new JSONObject(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_SET_SHARE_POSITION_URL, body, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    Utils.createOkToast(getContext(), response.getString("value"), 3000).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putBoolean(Config.SHARED_PREF_SHARE_POSITION, flag);
+                editor.commit();
+
+                control.setClickable(true);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+                try {
+                    JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
+                    String message = jsonResponse.getString("value");
+                    Utils.createErrorToast(getContext(), message, 3000).show();
+                    Log.e(LOG_TAG, message);
+                }
+                catch (JSONException | UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+
+                control.setChecked(false);
+                control.setClickable(true);
+
+
+            }
+        });
+
+        requestQueue.add(request);
+
 
     }
 

@@ -1,5 +1,7 @@
 package fragment;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.android.volley.Request;
@@ -63,16 +65,19 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
      *
      * @return
      */
-    public static YoutubeFragment newInstance() {
+    public static YoutubeFragment newInstance(Bundle bundle) {
 
         YoutubeFragment playerYouTubeFrag = new YoutubeFragment();
 
-//        Bundle bundle = new Bundle();
-//        bundle.putString("url", url);
-//
-//        playerYouTubeFrag.setArguments(bundle);
+        if (bundle != null) {
+            playerYouTubeFrag.init(bundle);
+        }
 
-        playerYouTubeFrag.init(); //This line right here
+        else {
+            playerYouTubeFrag.init(null);
+        }
+
+
 
         return playerYouTubeFrag;
     }
@@ -91,7 +96,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
 
 
-    private void init() {
+    private void init(final Bundle bundle) {
 
         initialize(Config.YOUTUBE_ANDROID_KEY, new YouTubePlayer.OnInitializedListener() {
 
@@ -106,17 +111,75 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
                 activePlayer.setPlayerStyle(YouTubePlayer.PlayerStyle.DEFAULT);
                 activePlayer.setFullscreenControlFlags(YouTubePlayer.FULLSCREEN_FLAG_CUSTOM_LAYOUT);
 
+
+
+
                 if (!wasRestored) {
 
                     // do something?
                     FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
-                    YoutubeControlsFragment youtubeControlsFragment = new YoutubeControlsFragment();
+                    final YoutubeControlsFragment youtubeControlsFragment = new YoutubeControlsFragment();
                     FragmentTransaction transaction = fragmentManager.beginTransaction().add(R.id.activity_main, youtubeControlsFragment);
                     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                     transaction.commitNow(); // addToBackStack + commitNow = IllegalSateException?
 
                     youtubeControlsFragment.initControls();
-                    youtubeControlsFragment.loadNextTrack();
+
+
+
+                    activePlayer.setPlayerStateChangeListener(new YouTubePlayer.PlayerStateChangeListener() {
+                        @Override
+                        public void onLoading() {
+
+                        }
+
+                        @Override
+                        public void onLoaded(String s) {
+
+                        }
+
+                        @Override
+                        public void onAdStarted() {
+
+                        }
+
+                        @Override
+                        public void onVideoStarted() {
+
+                        }
+
+                        @Override
+                        public void onVideoEnded() {
+                            Log.d(LOG_TAG, "Youtube video ended: loadNextTrack called");
+                            // increment the track index in SharedPreferences
+                            SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+                            int index = sharedPreferences.getInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0) + 1;
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, index);
+                            editor.commit();
+
+                            youtubeControlsFragment.loadNextTrack();
+                        }
+
+                        @Override
+                        public void onError(YouTubePlayer.ErrorReason errorReason) {
+
+                        }
+                    });
+
+
+
+                    if (bundle != null) {
+                        String trackID = bundle.getString(Config.TRACK_ID);
+                        String artistName = bundle.getString(Config.ARTIST_NAME);
+                        String songTitle = bundle.getString(Config.SONG_TITLE);
+
+                        youtubeControlsFragment.loadYoutubeVideo(trackID, artistName, songTitle);
+                    }
+                    else {
+                        youtubeControlsFragment.loadNextTrack();
+                    }
+
 
 
                 }

@@ -519,7 +519,7 @@ public class YoutubeControlsFragment extends Fragment {
 
                 if (error.networkResponse.statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
                     Utils.createErrorToast(getActivity(), "You are not logged in: please sign in", 3000).show();
-                    ((MainActivity)getActivity()).navigationManager(Config.NAV_LOGIN_STATE);
+                    ((MainActivity)getActivity()).navigationManager(Config.NAV_LOGIN_STATE, null);
                 }
 
             }
@@ -578,6 +578,7 @@ public class YoutubeControlsFragment extends Fragment {
                             String videoId = firstResult.getJSONObject("id").getString("videoId");
                             try {
                                 activePlayer.loadVideo(videoId, 0);
+                                Utils.createOkToast(getActivity(), artistName + " : " + songTitle, 3000).show();
 
                                 // add current playing track to preferences
                                 SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -625,6 +626,10 @@ public class YoutubeControlsFragment extends Fragment {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.e(LOG_TAG, error.toString());
+
+                        if (error.networkResponse.statusCode == Config.HTTP_STATUS_CODE_UNAUTHORIZED) {
+                            Utils.createErrorToast(getActivity(), "You are not logged in: random track selected", 3000).show();
+                        }
                     }
                 });
 
@@ -714,7 +719,7 @@ public class YoutubeControlsFragment extends Fragment {
 
                 try {
                     Log.d(LOG_TAG, response.toString(4));
-                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
+//                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

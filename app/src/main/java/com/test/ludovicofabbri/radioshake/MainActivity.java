@@ -3,6 +3,7 @@ package com.test.ludovicofabbri.radioshake;
 import android.*;
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
@@ -17,6 +18,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -33,10 +35,14 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
@@ -46,6 +52,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
@@ -59,7 +66,7 @@ import utils.Config;
 import utils.Utils;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
         LoginFragment.OnFragmentInteractionListener,
         RegisterFragment.OnFragmentInteractionListener,
         YoutubeControlsFragment.OnFragmentInteractionListener,
@@ -76,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FragmentManager mFragmentManager;
     private Stack<Integer> mNavigationStack;
     private GoogleMap mGoogleMap;
+    private HashMap<Marker, JSONObject> markersMap;
     private LocationManager mLocationManager;
     private final LocationListener mLocationListener = new LocationListener() {
 
@@ -201,10 +209,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         // for debug: clear SharedPreferences
-//        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-//        SharedPreferences.Editor editor = preferences.edit();
-//        editor.clear();
-//        editor.commit();
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.clear();
+        editor.commit();
+        Utils.createOkToast(getContext(), "SharedPreferences clean up", 3000).show();
 
 
     }
@@ -296,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void initSidebar() {
 
         ArrayAdapter<String> mListAdapter;
-        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags", "Maps", "Settings"};
+        String fragmentArray[] = {"Home", "Login", "Register", "Listen", "Music tags", "Geolocalize", "Settings"};
 
         mSidebarList = (ListView) findViewById(R.id.sidebar_list);
         mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
@@ -353,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
 
                 // navigate state
-                navigationManager(nextState);
+                navigationManager(nextState, null);
 
                 // close navigation menu
                 mDrawerLayout.closeDrawers();
@@ -377,7 +386,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View view) {
                 Button btn = (Button) view;
                 btn.setClickable(false);
-                navigationManager(Config.NAV_YOUTUBE_STATE);
+                navigationManager(Config.NAV_YOUTUBE_STATE, null);
             }
         });
 
@@ -388,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
      * Navigation Manager
      * @param nextState
      */
-    public void navigationManager(int nextState) {
+    public void navigationManager(int nextState, Bundle bundle) {
 
         FragmentTransaction transaction = null;
 
@@ -414,7 +423,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
             case Config.NAV_YOUTUBE_STATE:
-                Fragment youtubeFragment = YoutubeFragment.newInstance();
+
+                Fragment youtubeFragment;
+
+                if (bundle != null) {
+                    youtubeFragment = YoutubeFragment.newInstance(bundle);
+                }
+                else {
+                    youtubeFragment = YoutubeFragment.newInstance(null);
+                }
+
+
                 FragmentTransaction transaction1 = mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment);
                 String tag = "YoutubeControlsFragmentTAG";
                 transaction1.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
@@ -473,7 +492,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mGoogleMap.setIndoorEnabled(true);
             mGoogleMap.setBuildingsEnabled(true);
             mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
+
+
+            // set position and zoom of the google map camera on current location, if available
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Criteria criteria = new Criteria();
+
+            Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+            if (location != null)
+            {
+                mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 13));
+
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+                        .zoom(4)                   // Sets the zoom
+                        // .bearing(90)                // Sets the orientation of the camera to east
+                        // .tilt(40)                   // Sets the tilt of the camera to 30 degrees
+                        .build();                   // Creates a CameraPosition from the builder
+                mGoogleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            }
         }
+
+        mGoogleMap.setOnMarkerClickListener(this);
 
 //        mGoogleMap.addMarker(new MarkerOptions()
 //                .position(new LatLng(40.730610, -73.935242))
@@ -589,6 +629,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Log.d(LOG_TAG, response.toString());
 
                     JSONArray results = (JSONArray) response.get("value");
+
+                    markersMap = new HashMap<>();
+
                     for (int i = 0; i < results.length(); ++i) {
                         JSONObject result = (JSONObject)results.get(i);
                         String username = result.getString(Config.USERNAME);
@@ -602,10 +645,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         double longitude = positionObj.getDouble(Config.LONGITUDE);
 
                         if (mGoogleMap != null) {
-                            mGoogleMap.addMarker(new MarkerOptions()
+
+                            Marker marker = mGoogleMap.addMarker(new MarkerOptions()
                                     .position(new LatLng(latitude, longitude))
                                     .title(username)
                                     .snippet(artist_name + " : " + song_title));
+
+                            markersMap.put(marker, currTrackObj);
                         }
                     }
                 } catch (JSONException e) {
@@ -629,7 +675,56 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+
+        JSONObject currTrackObj = markersMap.get(marker);
+        try {
+            final String trackID = currTrackObj.getString(Config.TRACK_ID);
+            final String artistName = currTrackObj.getString(Config.ARTIST_NAME);
+            final String songTitle = currTrackObj.getString(Config.SONG_TITLE);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle(artistName + " : " + songTitle);
+            builder.setMessage("Do you want to listen this track?");
+
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    loadOtherSong(trackID, artistName, songTitle);
+                }
+            });
+
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Log.d(LOG_TAG, "No button");
+//                    Utils.createErrorToast(getContext(), "NO", 3000).show();
+                }
+            });
+
+            builder.show();
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
 
 
 
+
+
+    private void loadOtherSong(String trackID, String artistName, String songTitle) {
+        Log.d(LOG_TAG, "Load song from other user");
+//        Utils.createOkToast(getContext(), artistName + " " + songTitle, 3000).show();
+
+        Bundle bundle = new Bundle();
+        bundle.putString(Config.TRACK_ID, trackID);
+        bundle.putString(Config.ARTIST_NAME, artistName);
+        bundle.putString(Config.SONG_TITLE, songTitle);
+
+        navigationManager(Config.NAV_YOUTUBE_STATE, bundle);
+    }
 }
