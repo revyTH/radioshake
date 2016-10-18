@@ -17,6 +17,8 @@ import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -82,6 +84,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
      * @return YoutubeFragment player
      */
     public static YouTubePlayer getActivePlayer() {
+
         return activePlayer;
     }
 
@@ -106,6 +109,15 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
                 if (!wasRestored) {
 
                     // do something?
+                    FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
+                    YoutubeControlsFragment youtubeControlsFragment = new YoutubeControlsFragment();
+                    FragmentTransaction transaction = fragmentManager.beginTransaction().add(R.id.activity_main, youtubeControlsFragment);
+                    transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                    transaction.commitNow(); // addToBackStack + commitNow = IllegalSateException?
+
+                    youtubeControlsFragment.initControls();
+                    youtubeControlsFragment.loadNextTrack();
+
 
                 }
 

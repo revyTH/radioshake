@@ -1,13 +1,19 @@
 package fragment;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -130,6 +136,26 @@ public class YoutubeControlsFragment extends Fragment {
         }
 
         mListener = null;
+
+
+
+        // stop sending location
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        boolean isAlreadySendingPosition = sharedPref.getBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+
+        if (!isAlreadySendingPosition) {
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+
+                LocationManager locationManager = ((MainActivity)getActivity()).getLocationManager();
+                LocationListener locationListener = ((MainActivity)getActivity()).getLocationListener();
+
+                locationManager.removeUpdates(locationListener);
+
+                editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+                editor.commit();
+            }
+        }
     }
 
 
@@ -156,10 +182,13 @@ public class YoutubeControlsFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        //initialize youtube controls
-        initControls();
 
-        loadNextTrack();
+        // Initialization must be done in YoutubeFragment onInitializationSuccess, when the player is read
+
+        //initialize youtube controls
+        // initControls();
+
+        // loadNextTrack();
     }
 
 
@@ -174,7 +203,7 @@ public class YoutubeControlsFragment extends Fragment {
     /**
      * initialize control buttons
      */
-    private void initControls() {
+    public void initControls() {
 
         final ImageButton playControl = (ImageButton) getView().findViewById(R.id.play_control);
         final ImageButton pauseControl = (ImageButton) getActivity().findViewById(R.id.pause_control);
@@ -396,7 +425,7 @@ public class YoutubeControlsFragment extends Fragment {
     /**
      * loadNextTrack
      */
-    private void loadNextTrack() {
+    public void loadNextTrack() {
 
         try {
             SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -460,13 +489,21 @@ public class YoutubeControlsFragment extends Fragment {
 
                 try {
                     JSONArray tracks = (JSONArray)response.get("value");
-                    SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, tracks.toString());
-                    editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
-                    editor.commit();
+                    if (tracks.length() > 0) {
+                        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putString(Config.SHARED_PREF_LAST_RECOMMENDATIONS, tracks.toString());
+                        editor.putInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0);
+                        editor.commit();
 
-                    loadNextTrack();
+                        loadNextTrack();
+                        return;
+                    }
+                    else {
+                        getNextTracksFromServer();
+                        return;
+                    }
+
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -501,9 +538,13 @@ public class YoutubeControlsFragment extends Fragment {
      * @param artistName
      * @param songTitle
      */
-    public void loadYoutubeVideo(final String trackID, String artistName, String songTitle) {
+    public void loadYoutubeVideo(final String trackID, final String artistName, final String songTitle) {
 
         final YouTubePlayer activePlayer = YoutubeFragment.getActivePlayer();
+
+        if (activePlayer == null) {
+            return;
+        }
 
         String query = null;
         try {
@@ -513,8 +554,8 @@ public class YoutubeControlsFragment extends Fragment {
             return;
         }
 
-//        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video&videoEmbeddable=true";
-        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video";
+        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video&videoEmbeddable=true";
+//        String url = Config.YOUTUBE_QUERY_URL + "?key=" + Config.YOUTUBE_API_KEY + "&part=snippet&q=" + query + "&type=video";
 
 
 
@@ -546,6 +587,29 @@ public class YoutubeControlsFragment extends Fragment {
 
                                 // send current track as listened to the server
                                 updateListenedTracks(trackID);
+
+                                // set current_track on the server
+                                setCurrentTrack(trackID, artistName, songTitle);
+
+                                // if share_position is true, send periodically current position during playback
+                                boolean sharePosition = sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false);
+                                boolean isAlreadySendingPosition = sharedPref.getBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+                                if (sharePosition && !isAlreadySendingPosition) {
+                                    if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+
+                                        Criteria criteria = new Criteria();
+                                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                                        LocationManager locationManager = ((MainActivity)getActivity()).getLocationManager();
+                                        LocationListener locationListener = ((MainActivity)getActivity()).getLocationListener();
+                                        String provider = locationManager.getBestProvider(criteria, false);
+                                        locationManager.requestLocationUpdates(provider, Config.SEND_POSITION_INTERVAL_MS, Config.SEND_POSITION_DISTANCE_M, locationListener);
+
+                                        editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, true);
+                                        editor.commit();
+                                    }
+                                }
+
+
                             }
                             catch (IllegalStateException e) {
                                 Log.e(LOG_TAG, e.toString());
@@ -595,7 +659,7 @@ public class YoutubeControlsFragment extends Fragment {
             public void onResponse(JSONObject response) {
                 try {
                     Log.d(LOG_TAG, response.toString(4));
-                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
+//                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -608,7 +672,7 @@ public class YoutubeControlsFragment extends Fragment {
                 try {
                     JSONObject jsonResponse = new JSONObject(new String(error.networkResponse.data, "UTF-8"));
                     String message = jsonResponse.getString("value");
-                    Utils.createErrorToast(getActivity(), message, 3000).show();
+//                    Utils.createErrorToast(getActivity(), message, 3000).show();
                     Log.e(LOG_TAG, message);
                 }
                 catch (UnsupportedEncodingException | JSONException e) {
@@ -619,6 +683,49 @@ public class YoutubeControlsFragment extends Fragment {
         });
 
         // send request
+        requestQueue.add(request);
+
+    }
+
+
+
+
+
+    private void setCurrentTrack(String trackID, String artistName, String songTitle) {
+
+        RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
+
+        String jsonString = "{\"value\": {";
+        jsonString += String.format("\"trackid\" : \"%s\",", trackID);
+        jsonString += String.format("\"artist_name\" : \"%s\",", artistName);
+        jsonString += String.format("\"song_title\" : \"%s\"", songTitle);
+        jsonString += "}}";
+
+        JSONObject body = null;
+        try {
+            body = new JSONObject(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, Config.PY_SERVER_SET_CURRENT_TRACK, body, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+                    Log.d(LOG_TAG, response.toString(4));
+                    Utils.createOkToast(getActivity(), response.getString("value"), 3000).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+            }
+        });
+
         requestQueue.add(request);
 
     }

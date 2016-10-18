@@ -16,7 +16,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:background="?attr/colorPrimary"
+            android:background="@drawable/gradient_background_2"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
 

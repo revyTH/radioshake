@@ -14,4 +14,6 @@
     <color name="redError">#a82205</color>
     <color name="redErrorFade">#80a82205</color>
     <color name="cyanOk">#0b5bb7</color>
+    <color name="darkGray">#222222</color>
+
 </resources>

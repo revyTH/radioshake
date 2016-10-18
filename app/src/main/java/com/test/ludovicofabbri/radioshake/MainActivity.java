@@ -39,9 +39,11 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.util.List;
@@ -49,6 +51,7 @@ import java.util.Stack;
 
 import fragment.LoginFragment;
 import fragment.RegisterFragment;
+import fragment.SettingsFragment;
 import fragment.TagsFragment;
 import fragment.YoutubeControlsFragment;
 import fragment.YoutubeFragment;
@@ -60,7 +63,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LoginFragment.OnFragmentInteractionListener,
         RegisterFragment.OnFragmentInteractionListener,
         YoutubeControlsFragment.OnFragmentInteractionListener,
-        TagsFragment.OnFragmentInteractionListener {
+        TagsFragment.OnFragmentInteractionListener,
+        SettingsFragment.OnFragmentInteractionListener {
 
     private static final String LOG_TAG = MainActivity.class.toString();
     private Context mContext;
@@ -139,6 +143,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    /**
+     * getLocationManager
+     * @return
+     */
+    public LocationManager getLocationManager() {
+
+        if (mLocationManager == null) {
+            mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        }
+
+        return mLocationManager;
+
+    }
+
+
+
+    /**
+     * getLocationListener
+     * @return
+     */
+    public LocationListener getLocationListener() {
+
+        return mLocationListener;
+
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -170,10 +201,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         // for debug: clear SharedPreferences
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.clear();
-        editor.commit();
+//        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+//        SharedPreferences.Editor editor = preferences.edit();
+//        editor.clear();
+//        editor.commit();
 
 
     }
@@ -183,13 +214,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
         super.onResume();
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-
-            Criteria criteria = new Criteria();
-            criteria.setAccuracy(Criteria.ACCURACY_FINE);
-            String provider = mLocationManager.getBestProvider(criteria, false);
-            mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
-        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+//
+//            Criteria criteria = new Criteria();
+//            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+//            String provider = mLocationManager.getBestProvider(criteria, false);
+//            mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
+//        }
     }
 
 
@@ -252,6 +283,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
 
+
+        // remove app title from toolbar
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+
     }
 
 
@@ -261,7 +296,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void initSidebar() {
 
         ArrayAdapter<String> mListAdapter;
-        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags", "Maps"};
+        String fragmentArray[] = {"Home", "Login", "Register", "Youtube", "Tags", "Maps", "Settings"};
 
         mSidebarList = (ListView) findViewById(R.id.sidebar_list);
         mListAdapter = new ArrayAdapter<String>(this, R.layout.sidebar_list_item_layout, R.id.sidebar_list_item, fragmentArray);
@@ -304,6 +339,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     case 5:
                         nextState = Config.NAV_MAPS_STATE;
+                        break;
+
+                    case 6:
+                        nextState = Config.NAV_SETTINGS_STATE;
                         break;
 
                     default:
@@ -377,11 +416,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             case Config.NAV_YOUTUBE_STATE:
                 Fragment youtubeFragment = YoutubeFragment.newInstance();
                 FragmentTransaction transaction1 = mFragmentManager.beginTransaction().replace(R.id.activity_main, youtubeFragment);
-                FragmentTransaction transaction2 = mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment());
+                String tag = "YoutubeControlsFragmentTAG";
                 transaction1.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-                transaction2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+
+//                FragmentTransaction transaction2 = mFragmentManager.beginTransaction().add(R.id.activity_main, new YoutubeControlsFragment(), tag);
+//                transaction2.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+//                transaction2.commitNow(); // addToBackStack + commitNow = IllegalSateException?
+
                 transaction1.addToBackStack(null).commit();
-                transaction2.addToBackStack(null).commit();
                 break;
 
 
@@ -402,6 +444,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
             case Config.NAV_SETTINGS_STATE:
+                transaction = mFragmentManager.beginTransaction().replace(R.id.activity_main, new SettingsFragment());
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                transaction.addToBackStack(null).commit();
                 break;
 
 
@@ -430,12 +475,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
         }
 
-        mGoogleMap.addMarker(new MarkerOptions()
-                .position(new LatLng(0, 0))
-                .title("Marker"));
+//        mGoogleMap.addMarker(new MarkerOptions()
+//                .position(new LatLng(40.730610, -73.935242))
+//                .title("Marker"));
 
 
-
+        getOthersPosition();
 
     }
 
@@ -456,13 +501,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     Log.d(LOG_TAG, "LOCATION PERMISSION GRANTED");
 
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-
-                        Criteria criteria = new Criteria();
-                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-                        String provider = mLocationManager.getBestProvider(criteria, false);
-                        mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
-                    }
+//                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+//
+//                        Criteria criteria = new Criteria();
+//                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+//                        String provider = mLocationManager.getBestProvider(criteria, false);
+//                        mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
+//                    }
 
 
                     } else {
@@ -489,8 +534,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                 Config.PERMISSION_REQUEST_LOCATION);
-
     }
+
+
+
 
 
 
@@ -517,6 +564,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e(LOG_TAG, error.toString());
+            }
+        });
+
+        mRequestQueue.add(request);
+
+    }
+
+
+
+
+    private void getOthersPosition() {
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, Config.PY_SERVER_OTHERS_POSITION_URL, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+                try {
+                    Log.d(LOG_TAG, response.toString());
+
+                    JSONArray results = (JSONArray) response.get("value");
+                    for (int i = 0; i < results.length(); ++i) {
+                        JSONObject result = (JSONObject)results.get(i);
+                        String username = result.getString(Config.USERNAME);
+
+                        JSONObject currTrackObj = (JSONObject)result.get(Config.CURRENT_TRACK);
+                        String artist_name = currTrackObj.getString(Config.ARTIST_NAME);
+                        String song_title = currTrackObj.getString(Config.SONG_TITLE);
+
+                        JSONObject positionObj = (JSONObject)result.get(Config.POSITION);
+                        double latitude = positionObj.getDouble(Config.LATITUDE);
+                        double longitude = positionObj.getDouble(Config.LONGITUDE);
+
+                        if (mGoogleMap != null) {
+                            mGoogleMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(latitude, longitude))
+                                    .title(username)
+                                    .snippet(artist_name + " : " + song_title));
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
             }
         }, new Response.ErrorListener() {
             @Override

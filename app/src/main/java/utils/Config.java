@@ -44,7 +44,9 @@ public final class Config {
     public static final String PY_SERVER_SET_TELEPORT_URL = PY_SERVER_BASE_URL + "/api/set_teleport";
     public static final String PY_SERVER_SET_SHARE_POSITION_URL = PY_SERVER_BASE_URL + "/api/set_share_position";
     public static final String PY_SERVER_UPDATE_POSITION_URL = PY_SERVER_BASE_URL + "/api/update_position";
+    public static final String PY_SERVER_OTHERS_POSITION_URL = PY_SERVER_BASE_URL + "/api/others_position";
     public static final String PY_SERVER_SET_ACTIVE_URL = PY_SERVER_BASE_URL + "/api/set_active";
+    public static final String PY_SERVER_SET_CURRENT_TRACK = PY_SERVER_BASE_URL + "/api/set_current_track";
     public static final String PY_SERVER_NEXT_TRACKS_URL = PY_SERVER_BASE_URL + "/api/next_tracks";
 
 
@@ -60,11 +62,21 @@ public final class Config {
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS = "Last_Recommendations";
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS_INDEX = "Last_Recommendations_index";
     public static final String SHARED_PREF_LAST_CURRENT_TRACK = "Last_Recommendations_Current_Playing_Track";
+    public static final String SHARED_PREF_SHARE_POSITION = "Share_Position";
+    public static final String SHARED_PREF_ALREADY_SENDING_POSITION = "Already_Sending_Position";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String POSITION = "position";
+    public static final String CURRENT_TRACK = "current_track";
     public static final String TRACK_ID = "trackid";
     public static final String ARTIST_NAME = "artist_name";
     public static final String SONG_TITLE = "song_title";
+    public static final String LATITUDE = "latitude";
+    public static final String LONGITUDE = "longitude";
 
     public static final int PERMISSION_REQUEST_LOCATION = 101;
+    public static final int SEND_POSITION_INTERVAL_MS = 5000;
+    public static final int SEND_POSITION_DISTANCE_M = 0;
 
 
 }

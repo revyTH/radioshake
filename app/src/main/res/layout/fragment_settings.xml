@@ -1,0 +1,54 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_background_1"
+    tools:context="fragment.SettingsFragment">
+
+
+    <!--title-->
+    <TextView
+        android:id="@+id/title"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="48sp"
+        android:textColor="#fff"
+        android:text="Settings"/>
+
+
+
+
+    <LinearLayout
+        android:id="@+id/settings_list"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:layout_height="wrap_content">
+
+
+
+
+        <Switch
+            android:id="@+id/share_position_switch"
+            android:padding="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#eee"
+            android:textSize="22sp"
+            android:text="Share position    " />
+
+
+
+    </LinearLayout>
+
+
+
+
+
+
+</RelativeLayout>
