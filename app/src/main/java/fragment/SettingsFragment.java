@@ -1,11 +1,17 @@
 package fragment;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -204,6 +210,27 @@ public class SettingsFragment extends Fragment {
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putBoolean(Config.SHARED_PREF_SHARE_POSITION, flag);
                 editor.commit();
+
+
+                if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                    LocationManager locationManager = ((MainActivity)getActivity()).getLocationManager();
+                    LocationListener locationListener = ((MainActivity)getActivity()).getLocationListener();
+
+                    if (flag) {
+                        Criteria criteria = new Criteria();
+                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                        String provider = locationManager.getBestProvider(criteria, false);
+                        locationManager.requestLocationUpdates(provider, Config.SEND_POSITION_INTERVAL_MS, Config.SEND_POSITION_DISTANCE_M, locationListener);
+                    }
+
+                    else {
+                        locationManager.removeUpdates(locationListener);
+                    }
+
+                }
+
+
 
                 control.setClickable(true);
             }

@@ -114,7 +114,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
 
 
-                if (!wasRestored) {
+//                if (!wasRestored) {
 
                     // do something?
                     FragmentManager fragmentManager = ((MainActivity)getActivity()).getMainFragmentManager();
@@ -123,6 +123,8 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
                     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
                     transaction.commitNow(); // addToBackStack + commitNow = IllegalSateException?
 
+
+                    // init youtube controls
                     youtubeControlsFragment.initControls();
 
 
@@ -151,6 +153,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
                         @Override
                         public void onVideoEnded() {
                             Log.d(LOG_TAG, "Youtube video ended: loadNextTrack called");
+
                             // increment the track index in SharedPreferences
                             SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
                             int index = sharedPreferences.getInt(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX, 0) + 1;
@@ -182,7 +185,7 @@ public class YoutubeFragment extends YouTubePlayerSupportFragment {
 
 
 
-                }
+                // }
 
 
                 activePlayer.setOnFullscreenListener(new YouTubePlayer.OnFullscreenListener(){

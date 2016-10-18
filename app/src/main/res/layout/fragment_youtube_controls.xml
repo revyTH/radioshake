@@ -53,15 +53,15 @@
     android:background="@drawable/youtube_control_bg" />
 
 
-    <ImageButton
-        android:id="@+id/info_control"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:scaleType="center"
-        android:contentDescription="Track info"
-        android:src="@drawable/info_icon"
-    android:background="@drawable/youtube_control_bg" />
+    <!--<ImageButton-->
+        <!--android:id="@+id/info_control"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:layout_weight="1"-->
+        <!--android:scaleType="center"-->
+        <!--android:contentDescription="Track info"-->
+        <!--android:src="@drawable/info_icon"-->
+    <!--android:background="@drawable/youtube_control_bg" />-->
 
 
 

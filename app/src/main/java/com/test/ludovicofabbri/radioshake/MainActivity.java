@@ -6,6 +6,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorListener;
+import android.hardware.SensorManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -28,6 +33,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -81,6 +87,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ActionBarDrawerToggle mDrawerToggle;
     private ListView mSidebarList;
     private FragmentManager mFragmentManager;
+
+    private SensorManager mSensorManager;
+    private float mAccel; // acceleration apart from gravity
+    private float mAccelCurrent; // current acceleration including gravity
+    private float mAccelLast; // last acceleration including gravity
+
     private Stack<Integer> mNavigationStack;
     private GoogleMap mGoogleMap;
     private HashMap<Marker, JSONObject> markersMap;
@@ -158,13 +170,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public LocationManager getLocationManager() {
 
         if (mLocationManager == null) {
-            mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+            mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         }
 
         return mLocationManager;
 
     }
-
 
 
     /**
@@ -186,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // necessary for session-cookie management in Volley
         CookieHandler.setDefault(new CookieManager());
 
+
         // init the navigation stack
         mNavigationStack = new Stack<Integer>();
 
@@ -196,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.mRequestQueue = Volley.newRequestQueue(this);
 
 
-        this.mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        this.mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 
         askLocationPermissions();
@@ -209,11 +221,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         // for debug: clear SharedPreferences
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.clear();
-        editor.commit();
-        Utils.createOkToast(getContext(), "SharedPreferences clean up", 3000).show();
+//        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+//        SharedPreferences.Editor editor = preferences.edit();
+//        editor.clear();
+//        editor.commit();
+//        Utils.createOkToast(getContext(), "SharedPreferences clean up", 3000).show();
 
 
     }
@@ -223,16 +235,67 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
         super.onResume();
 
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-//
-//            Criteria criteria = new Criteria();
-//            criteria.setAccuracy(Criteria.ACCURACY_FINE);
-//            String provider = mLocationManager.getBestProvider(criteria, false);
-//            mLocationManager.requestLocationUpdates(provider, 10000, 0, mLocationListener);
-//        }
+//        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+
+
+        // if share_position is true, send periodically current position to the server
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        boolean sharePosition = sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false);
+        boolean isAlreadySendingPosition = sharedPref.getBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+        if (sharePosition && !isAlreadySendingPosition) {
+            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                Criteria criteria = new Criteria();
+                criteria.setAccuracy(Criteria.ACCURACY_FINE);
+                String provider = mLocationManager.getBestProvider(criteria, false);
+                mLocationManager.requestLocationUpdates(provider, Config.SEND_POSITION_INTERVAL_MS, Config.SEND_POSITION_DISTANCE_M, mLocationListener);
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, true);
+                editor.commit();
+            }
+        }
+
     }
 
 
+    @Override
+    protected void onPause() {
+//        mSensorManager.unregisterListener(mSensorListener);
+        super.onPause();
+
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+        editor.commit();
+
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            mLocationManager.removeUpdates(mLocationListener);
+
+        }
+
+
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        SharedPreferences sharedPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+        editor.commit();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            mLocationManager.removeUpdates(mLocationListener);
+
+        }
+
+    }
 
     /**
      * This interface must be implemented by activities that contain this
@@ -651,6 +714,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     .title(username)
                                     .snippet(artist_name + " : " + song_title));
 
+                            currTrackObj.put(Config.USERNAME, username);   // add username to display in marker
                             markersMap.put(marker, currTrackObj);
                         }
                     }
@@ -680,12 +744,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         JSONObject currTrackObj = markersMap.get(marker);
         try {
+            final String username = currTrackObj.getString(Config.USERNAME);
             final String trackID = currTrackObj.getString(Config.TRACK_ID);
             final String artistName = currTrackObj.getString(Config.ARTIST_NAME);
             final String songTitle = currTrackObj.getString(Config.SONG_TITLE);
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            builder.setTitle(artistName + " : " + songTitle);
+            builder.setTitle(username + " is listening: " + artistName + " - " + songTitle);
             builder.setMessage("Do you want to listen this track?");
 
             builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -727,4 +792,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         navigationManager(Config.NAV_YOUTUBE_STATE, bundle);
     }
+
+
 }

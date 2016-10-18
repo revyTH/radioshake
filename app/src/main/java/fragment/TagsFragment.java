@@ -2,6 +2,7 @@ package fragment;
 
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
@@ -362,7 +363,7 @@ public class TagsFragment extends Fragment {
                 final RequestQueue requestQueue = ((MainActivity)getActivity()).getRequestQueue();
 
 
-                ArrayList<String> tagsChosenList = new ArrayList<String>();
+                final ArrayList<String> tagsChosenList = new ArrayList<String>();
                 Iterator it = mTagsChosen.entrySet().iterator();
 
                 while (it.hasNext()) {
@@ -396,6 +397,31 @@ public class TagsFragment extends Fragment {
                             Log.d(LOG_TAG, response.toString(4));
                             String message = response.getString("value");
                             Utils.createOkToast(getActivity(), message, 3000).show();
+
+
+                            SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+                            SharedPreferences.Editor editor = sharedPref.edit();
+
+                            // we delete previous recommendations
+                            if (sharedPref.contains(Config.SHARED_PREF_LAST_RECOMMENDATIONS)) {
+                                editor.remove(Config.SHARED_PREF_LAST_RECOMMENDATIONS);
+                                editor.remove(Config.SHARED_PREF_LAST_RECOMMENDATIONS_INDEX);
+                                editor.commit();
+                            }
+
+
+                            // we add tags in the SharedPreferences
+                            String userTags = "";
+                            for (String tag : tagsChosenList) {
+                                userTags += tag + "\t";
+                            }
+                            editor.putString(Config.SHARED_PREF_USER_TAGS, userTags);
+                            editor.commit();
+
+                            // then return to main
+                            ((MainActivity)getActivity()).onFragmentBackToMain("Back to MAIN from TAGS");
+
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

@@ -5,6 +5,10 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Criteria;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -64,6 +68,10 @@ public class YoutubeControlsFragment extends Fragment {
 
     private static final String LOG_TAG = YoutubeControlsFragment.class.toString();
     private RequestQueue mRequestQueue;
+    private SensorManager mSensorManager;
+    private float mAccel; // acceleration apart from gravity
+    private float mAccelCurrent; // current acceleration including gravity
+    private float mAccelLast; // last acceleration including gravity
 
     private OnFragmentInteractionListener mListener;
 
@@ -100,6 +108,13 @@ public class YoutubeControlsFragment extends Fragment {
         // get RequestQeue from the MainActivity
         this.mRequestQueue = ((MainActivity)getActivity()).getRequestQueue();
 
+        // init sensor manager
+        mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+        mAccel = 0.00f;
+        mAccelCurrent = SensorManager.GRAVITY_EARTH;
+        mAccelLast = SensorManager.GRAVITY_EARTH;
+
         // restore start_music button clickable
         Button startMusicBtn = (Button)((MainActivity)getActivity()).findViewById(R.id.start_music);
         startMusicBtn.setClickable(true);
@@ -128,6 +143,9 @@ public class YoutubeControlsFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+
+        // stop sensor
+        mSensorManager.unregisterListener(mSensorListener);
 
 
         // handle backward navigation
@@ -160,6 +178,20 @@ public class YoutubeControlsFragment extends Fragment {
 
 
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // resume sensor
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // stop sensor
+        mSensorManager.unregisterListener(mSensorListener);
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -183,7 +215,7 @@ public class YoutubeControlsFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
 
 
-        // Initialization must be done in YoutubeFragment onInitializationSuccess, when the player is read
+        // Initialization must be done in YoutubeFragment onInitializationSuccess, when the player is ready
 
         //initialize youtube controls
         // initControls();
@@ -194,6 +226,39 @@ public class YoutubeControlsFragment extends Fragment {
 
 
 
+
+
+
+    /**
+     * SensorEventListener
+     */
+    private final SensorEventListener mSensorListener = new SensorEventListener() {
+
+        public void onSensorChanged(SensorEvent se) {
+            float x = se.values[0];
+            float y = se.values[1];
+            float z = se.values[2];
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float) Math.sqrt((double) (x*x + y*y + z*z));
+            float delta = mAccelCurrent - mAccelLast;
+            mAccel = mAccel * 0.9f + delta; // perform low-cut filter
+
+//            Log.d(LOG_TAG, "" + mAccel);
+
+            if (mAccel > 10) {
+                Log.d(LOG_TAG, "Device shaked!");
+
+                // load next track
+                ImageButton control = (ImageButton)getActivity().findViewById(R.id.forward_control);
+                forwardControlHandler(control);
+
+            }
+
+        }
+
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+    };
 
 
 
@@ -209,7 +274,7 @@ public class YoutubeControlsFragment extends Fragment {
         final ImageButton pauseControl = (ImageButton) getActivity().findViewById(R.id.pause_control);
         final ImageButton forwardControl = (ImageButton) getActivity().findViewById(R.id.forward_control);
         final ImageButton dislikeControl = (ImageButton) getActivity().findViewById(R.id.dislike_control);
-        final ImageButton infoControl = (ImageButton) getActivity().findViewById(R.id.info_control);
+//        final ImageButton infoControl = (ImageButton) getActivity().findViewById(R.id.info_control);
 
 
         playControl.setOnClickListener(new View.OnClickListener() {
@@ -248,14 +313,14 @@ public class YoutubeControlsFragment extends Fragment {
             }
         });
 
-        infoControl.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(LOG_TAG, "Info control pressed");
-                infoControl.setClickable(false);
-                infoControlHandler(infoControl);
-            }
-        });
+//        infoControl.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Log.d(LOG_TAG, "Info control pressed");
+//                infoControl.setClickable(false);
+//                infoControlHandler(infoControl);
+//            }
+//        });
 
     }
 
@@ -403,19 +468,7 @@ public class YoutubeControlsFragment extends Fragment {
      */
     private void infoControlHandler(final ImageButton control) {
 
-        SharedPreferences sharedPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
-        String jsonString = sharedPreferences.getString("LAST_RECOMMENDATIONS", null);
 
-        try {
-            JSONArray lastRecommendations = new JSONArray(jsonString);
-            Log.d(LOG_TAG, lastRecommendations.toString(4));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
-        // re-enable ImageButton control
-        control.setClickable(true);
 
     }
 
@@ -533,6 +586,7 @@ public class YoutubeControlsFragment extends Fragment {
 
 
 
+
     /**
      * loadYoutubeVideo
      * @param artistName
@@ -593,22 +647,22 @@ public class YoutubeControlsFragment extends Fragment {
                                 setCurrentTrack(trackID, artistName, songTitle);
 
                                 // if share_position is true, send periodically current position during playback
-                                boolean sharePosition = sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false);
-                                boolean isAlreadySendingPosition = sharedPref.getBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
-                                if (sharePosition && !isAlreadySendingPosition) {
-                                    if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
-
-                                        Criteria criteria = new Criteria();
-                                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-                                        LocationManager locationManager = ((MainActivity)getActivity()).getLocationManager();
-                                        LocationListener locationListener = ((MainActivity)getActivity()).getLocationListener();
-                                        String provider = locationManager.getBestProvider(criteria, false);
-                                        locationManager.requestLocationUpdates(provider, Config.SEND_POSITION_INTERVAL_MS, Config.SEND_POSITION_DISTANCE_M, locationListener);
-
-                                        editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, true);
-                                        editor.commit();
-                                    }
-                                }
+//                                boolean sharePosition = sharedPref.getBoolean(Config.SHARED_PREF_SHARE_POSITION, false);
+//                                boolean isAlreadySendingPosition = sharedPref.getBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, false);
+//                                if (sharePosition && !isAlreadySendingPosition) {
+//                                    if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ) {
+//
+//                                        Criteria criteria = new Criteria();
+//                                        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+//                                        LocationManager locationManager = ((MainActivity)getActivity()).getLocationManager();
+//                                        LocationListener locationListener = ((MainActivity)getActivity()).getLocationListener();
+//                                        String provider = locationManager.getBestProvider(criteria, false);
+//                                        locationManager.requestLocationUpdates(provider, Config.SEND_POSITION_INTERVAL_MS, Config.SEND_POSITION_DISTANCE_M, locationListener);
+//
+//                                        editor.putBoolean(Config.SHARED_PREF_ALREADY_SENDING_POSITION, true);
+//                                        editor.commit();
+//                                    }
+//                                }
 
 
                             }

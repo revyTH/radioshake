@@ -1,6 +1,7 @@
 package fragment;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -222,6 +223,19 @@ public class LoginFragment extends Fragment {
                     String message = response.getString("value");
                     Utils.createOkToast(getActivity(), message, 3000).show();
 
+                    SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+
+                    // if user has already choose some tags go to main
+                    if (sharedPref.contains(Config.SHARED_PREF_USER_TAGS)) {
+                        ((MainActivity)getActivity()).onFragmentBackToMain("Back to MAIN from LOGIN");
+                    }
+                    // else go to tags view
+                    else {
+                        ((MainActivity)getActivity()).navigationManager(Config.NAV_TAGS_STATE, null);
+                    }
+
+
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -244,6 +258,9 @@ public class LoginFragment extends Fragment {
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Toast.makeText(getActivity(), "Whoops! An error occurred.", Toast.LENGTH_LONG).show();
+                }
+                catch (NullPointerException e) {
+                    e.printStackTrace();
                 }
             }
         });

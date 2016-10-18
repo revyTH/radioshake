@@ -28,9 +28,9 @@ public final class Config {
 
 
 //    public static final String PY_SERVER_BASE_URL = "http://192.168.1.72:4500";
-    public static final String PY_SERVER_BASE_URL = "http://192.168.1.75:4500";
+//    public static final String PY_SERVER_BASE_URL = "http://192.168.1.75:4500";
 //    public static final String PY_SERVER_BASE_URL = "http://2.236.20.78:4500";
-//    public static final String PY_SERVER_BASE_URL = "http://192.168.43.101:4500";
+    public static final String PY_SERVER_BASE_URL = "http://192.168.43.101:4500";
 //    public static final String PY_SERVER_BASE_URL = "http://172.20.10.3:4500";
 
     public static final String PY_SERVER_REGISTER_URL = PY_SERVER_BASE_URL + "/auth/register";
@@ -59,6 +59,7 @@ public final class Config {
     public static final int HTTP_STATUS_CODE_SERVER_ERROR = 500;
 
 
+    public static final String SHARED_PREF_USER_TAGS = "User_Tags";
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS = "Last_Recommendations";
     public static final String SHARED_PREF_LAST_RECOMMENDATIONS_INDEX = "Last_Recommendations_index";
     public static final String SHARED_PREF_LAST_CURRENT_TRACK = "Last_Recommendations_Current_Playing_Track";
